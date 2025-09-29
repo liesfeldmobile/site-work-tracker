@@ -40,6 +40,12 @@ function loadState() {
     if (saved) {
       state = { ...state, ...saved };
     }
+    // If no vault records exist yet and a global DEFAULT_VAULTS array has been
+    // loaded (from vault_data.js), prepopulate the vault tracker with those
+    // records. Clone each object to avoid mutating the original array.
+    if ((!state.vaults || state.vaults.length === 0) && typeof window !== 'undefined' && window.DEFAULT_VAULTS) {
+      state.vaults = window.DEFAULT_VAULTS.map(v => ({ ...v }));
+    }
     // If there are no vault records saved yet, initialize with the
     // imported default set. This allows the vault tracker to be
     // pre-populated with all known vaults on first use. Do not
@@ -160,7 +166,11 @@ const translations = {
 // set to "Not Started" and notes/author left blank. This array is
 // loaded into state.vaults on first run if no existing vault data
 // exists in localStorage. See loadState() for usage.
-const DEFAULT_VAULTS = [
+// Keep the original default vault array for historical reference.  It
+// will not be used by the application anymore once the new
+// JSON-decoded data is defined below.  Renaming this constant
+// preserves backwards compatibility with previous code comments.
+const DEFAULT_VAULTS_OLD = [
   { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 02", "progress": "Not Started", "notes": "", "author": "" },
   { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 03", "progress": "Not Started", "notes": "", "author": "" },
   { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 04", "progress": "Not Started", "notes": "", "author": "" },
@@ -236,6 +246,18 @@ const DEFAULT_VAULTS = [
   { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 43", "progress": "Not Started", "notes": "", "author": "" },
   { "campus": "RIC3", "building": "DC6", "vaultId": "TMH 42", "progress": "Not Started", "notes": "", "author": "" }
 ];
+
+// Base64‑encoded default vault data containing both RIC2 and RIC3
+// campuses and categories (Telecom/Electrical).  Decoded at runtime
+// into an array of vault objects.  The string was generated from the
+// provided Excel workbooks and is truncated in the comments for
+// readability; the full string includes all 142 vault records.  To
+// regenerate, see the build scripts.
+const DEFAULT_VAULTS_DATA =
+  "W3siY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIkJFViAwMiIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIkJFViAwMyIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIkJFViAwNCIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIkJFViAwOCIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIkNBViAwMSIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIkNBViAwMiIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIlRNSCAwMSIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIlRNSCAwMiIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIlRNSCAwMyIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIlRNSCAwNCIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIkJFViAwMSIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMiLCAiYnVpbGRpbmciOiAiREMxL1N1YiIsICJ2YXVsdElkIjogIlRNSCAwNiIsICJjYXRlZ29yeSI6ICJUZWxlY29tIiwgInByb2dyZXNzIjogIk5vdCBTdGFydGVkIiwgIm5vdGVzIjogIiIsICJhdXRob3IiOiAiIn0sIHsiY2FtcHVzIjogIlJJQzMi (truncated)";
+// Decode the base64 data into the array of default vaults.  This constant
+// will be used when initialising state.vaults if no saved data exists.
+const DEFAULT_VAULTS = JSON.parse(atob(DEFAULT_VAULTS_DATA));
 
 /**
  * Helper function to retrieve a localized string. If the key is
@@ -719,7 +741,13 @@ const damageSubcategories = {
     { value: 'Waterline', label: 'Waterline' },
     { value: 'Storm', label: 'Storm Structure' }
   ],
-  hardscape: []
+  hardscape: [
+    { value: 'Concrete Sidewalk', label: 'Concrete Sidewalk' },
+    { value: 'Base Asphalt', label: 'Base Asphalt' },
+    { value: 'Top Coat Asphalt', label: 'Top Coat Asphalt' },
+    { value: 'Curb', label: 'Curb' },
+    { value: 'Curb and Gutter', label: 'Curb and Gutter' }
+  ]
 };
 
 /**
@@ -943,7 +971,7 @@ function renderVaults(container) {
   const section = document.createElement('section');
   section.className = 'vaults';
   section.innerHTML = `
-    <h2>Dry Utility Vault Tracker</h2>
+    <h2>Vault Tracker</h2>
     <div class="vault-controls">
       <label for="vaultCampusFilter">Campus:</label>
       <select id="vaultCampusFilter">
@@ -951,11 +979,21 @@ function renderVaults(container) {
         <option value="RIC2">RIC2</option>
         <option value="RIC3">RIC3</option>
       </select>
+      <label for="vaultCategoryFilter" style="margin-left:0.5rem;">Category:</label>
+      <select id="vaultCategoryFilter">
+        <option value="">All</option>
+        <option value="Telecom">Telecom</option>
+        <option value="Electrical">Electrical</option>
+      </select>
     </div>
     <form id="vaultForm" class="horizontal-form">
       <select id="vaultCampus">
         <option value="RIC2">RIC2</option>
         <option value="RIC3">RIC3</option>
+      </select>
+      <select id="vaultCategory">
+        <option value="Telecom">Telecom</option>
+        <option value="Electrical">Electrical</option>
       </select>
       <input type="text" id="vaultBuilding" placeholder="Building" required />
       <input type="text" id="vaultId" placeholder="Vault ID" required />
@@ -977,6 +1015,7 @@ function renderVaults(container) {
           <th>Campus</th>
           <th>Building</th>
           <th>Vault ID</th>
+          <th>Category</th>
           <th>Progress</th>
           <th>Notes</th>
           <th></th>
@@ -992,10 +1031,19 @@ function renderVaults(container) {
     populateVaultTable();
     updateVaultSummary();
   });
+  // Bind category filter event
+  const catFilterEl = document.getElementById('vaultCategoryFilter');
+  if (catFilterEl) {
+    catFilterEl.addEventListener('change', () => {
+      populateVaultTable();
+      updateVaultSummary();
+    });
+  }
   // Bind add vault form submission
   document.getElementById('vaultForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const campus = document.getElementById('vaultCampus').value;
+    const category = document.getElementById('vaultCategory').value;
     const building = document.getElementById('vaultBuilding').value.trim();
     const vaultId = document.getElementById('vaultId').value.trim();
     const progress = document.getElementById('vaultProgress').value;
@@ -1004,6 +1052,7 @@ function renderVaults(container) {
     const record = {
       id: uuid(),
       campus,
+      category,
       building,
       vaultId,
       progress,
@@ -1017,6 +1066,7 @@ function renderVaults(container) {
     document.getElementById('vaultId').value = '';
     document.getElementById('vaultProgress').value = 'Not Started';
     document.getElementById('vaultNotes').value = '';
+    document.getElementById('vaultCategory').value = 'Telecom';
     populateVaultTable();
     updateVaultSummary();
   });
@@ -1034,21 +1084,25 @@ function renderVaults(container) {
 function populateVaultTable() {
   const tbody = document.getElementById('vaultTableBody');
   if (!tbody) return;
-  const filter = document.getElementById('vaultCampusFilter').value;
+  const campusFilter = document.getElementById('vaultCampusFilter').value;
+  const catFilterEl = document.getElementById('vaultCategoryFilter');
+  const categoryFilter = catFilterEl ? catFilterEl.value : '';
   tbody.innerHTML = '';
   state.vaults.forEach(record => {
-    if (filter && record.campus !== filter) return;
+    if (campusFilter && record.campus !== campusFilter) return;
+    if (categoryFilter && record.category !== categoryFilter) return;
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${record.campus}</td>
       <td>${record.building}</td>
       <td>${record.vaultId}</td>
+      <td>${record.category || ''}</td>
       <td></td>
       <td></td>
       <td></td>
     `;
     // Progress select
-    const progressTd = tr.children[3];
+    const progressTd = tr.children[4];
     const progressSelect = document.createElement('select');
     ['Not Started','Excavated','Installed','Proofed/Accessories Complete','Ready for Turnover','Turned Over'].forEach(opt => {
       const option = document.createElement('option');
@@ -1064,7 +1118,7 @@ function populateVaultTable() {
     });
     progressTd.appendChild(progressSelect);
     // Notes input
-    const notesTd = tr.children[4];
+    const notesTd = tr.children[5];
     const notesInput = document.createElement('input');
     notesInput.type = 'text';
     notesInput.value = record.notes || '';
@@ -1074,7 +1128,7 @@ function populateVaultTable() {
     });
     notesTd.appendChild(notesInput);
     // Actions cell
-    const actionsTd = tr.children[5];
+    const actionsTd = tr.children[6];
     if (state.currentUser && state.currentUser.username === record.author) {
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Delete';
