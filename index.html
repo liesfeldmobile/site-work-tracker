@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Progressive Web App manifest declaration -->
+  <link rel="manifest" href="manifest.json" />
+  <!-- Custom styles for layout and responsiveness -->
+  <link rel="stylesheet" href="styles.css" />
+  <title>Site Work Tracker</title>
+</head>
+<body>
+  <!-- Header shows the title and navigation bar. Navigation is built dynamically in app.js -->
+  <header>
+    <div class="branding">
+      <img src="icons/company-logo.png" alt="Company Logo" class="logo" />
+      <h1>Site Work Tracker</h1>
+    </div>
+    <nav id="navbar"></nav>
+  </header>
+  <!-- Main content container. Views are injected here by the JavaScript router. -->
+  <main id="app"></main>
+  <!-- Application logic -->
+  <script src="app.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+/*
+ * Basic styling for the Site Work Tracker app. This stylesheet uses
+ * responsive design techniques so the same code works well on both
+ * desktop and mobile devices. Feel free to tweak the variables or add
+ * additional styles to suit your company's branding.
+ */
+
+/* Reset some default margins and typography */
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f5f7f9;
+  color: #333;
+}
+
+header {
+  background: #2d6cdf;
+  color: white;
+  padding: 1rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+header h1 {
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+/* Branding container holds the logo and title */
+.branding {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Logo styling – adjust the height to suit your needs */
+.logo {
+  height: 40px;
+  width: auto;
+}
+nav .nav-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  gap: 1rem;
+}
+nav a {
+  color: white;
+  text-decoration: none;
+  font-weight: bold;
+}
+nav a:hover {
+  text-decoration: underline;
+}
+
+main {
+  padding: 1rem;
+}
+
+/* Form wrapper used for login/register pages */
+.form-wrapper {
+  max-width: 400px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.form-wrapper h2 {
+  text-align: center;
+  margin-top: 0;
+}
+.form-wrapper form label {
+  display: block;
+  margin-bottom: 1rem;
+}
+.form-wrapper input, .form-wrapper select {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.form-wrapper button {
+  width: 100%;
+  padding: 0.6rem;
+  background: #2d6cdf;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  font-size: 1rem;
+  cursor: pointer;
+}
+.form-wrapper button:hover {
+  background: #1b4ea6;
+}
+.form-wrapper p {
+  text-align: center;
+}
+.form-wrapper a {
+  color: #2d6cdf;
+}
+
+/* Dashboard layout */
+.dashboard {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 1rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+.dashboard .stats {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.dashboard .stat {
+  flex: 1;
+  background: #f0f3f8;
+  padding: 1rem;
+  border-radius: 8px;
+  text-align: center;
+}
+.dashboard .actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+}
+.dashboard .actions button {
+  padding: 0.7rem 1rem;
+  font-size: 1rem;
+  border: none;
+  border-radius: 4px;
+  background: #2d6cdf;
+  color: white;
+  cursor: pointer;
+}
+.dashboard .actions button:hover {
+  background: #1b4ea6;
+}
+
+/* Horizontal forms for damage and schedule views */
+.horizontal-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.horizontal-form select,
+.horizontal-form input[type="text"],
+.horizontal-form input[type="date"],
+.horizontal-form button {
+  padding: 0.5rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+.horizontal-form button {
+  background: #2d6cdf;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+.horizontal-form button:hover {
+  background: #1b4ea6;
+}
+
+/* Records table */
+table.records {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+table.records th, table.records td {
+  padding: 0.5rem;
+  border-bottom: 1px solid #eee;
+  text-align: left;
+}
+table.records th {
+  background: #f0f3f8;
+}
+table.records tr:last-child td {
+  border-bottom: none;
+}
+button.danger {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.3rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+button.danger:hover {
+  background: #c0392b;
+}
+
+/* Responsive tweaks */
+@media (max-width: 600px) {
+  .dashboard .stats {
+    flex-direction: column;
+  }
+  .horizontal-form {
+    flex-direction: column;
+  }
+}
