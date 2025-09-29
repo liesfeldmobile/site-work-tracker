@@ -23,6 +23,10 @@ let state = {
   // including its campus, building, identifier, progress stage and
   // notes. See renderVaults() for usage.
   vaults: []
+  ,
+  // UI language ("en" for English or "es" for Spanish). The language
+  // selection persists across sessions. Default is English.
+  language: 'en'
 };
 
 /**
@@ -53,7 +57,8 @@ function saveState() {
     schedules: state.schedules,
     currentUser: state.currentUser,
     // Persist vault tracker records
-    vaults: state.vaults
+    vaults: state.vaults,
+    language: state.language
   }));
 }
 
@@ -74,6 +79,84 @@ function registerServiceWorker() {
  */
 function uuid() {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+// Translation dictionaries for English (en) and Spanish (es). Each key
+// corresponds to a string used in the user interface. When adding
+// additional language support, extend these objects with new keys.
+const translations = {
+  en: {
+    loginTitle: 'Login',
+    registerTitle: 'Register',
+    emailLabel: 'Email',
+    passwordLabel: 'Password',
+    confirmPasswordLabel: 'Confirm Password',
+    roleLabel: 'Role',
+    adminOption: 'Admin',
+    fieldOption: 'Field Worker',
+    loginButton: 'Login',
+    registerButton: 'Register',
+    noAccount: 'No account?',
+    registerHere: 'Register here',
+    haveAccount: 'Have an account?',
+    loginHere: 'Login here',
+    forgotPassword: 'Forgot password?',
+    english: 'English',
+    spanish: 'Español',
+    dashboard: 'Dashboard',
+    damageReports: 'Damage Reports',
+    schedules: 'Schedules',
+    vaultTracker: 'Vault Tracker',
+    logout: 'Logout'
+    ,
+    createAccount: 'Create Account'
+    ,
+    welcome: 'Welcome',
+    damageReportsLabel: 'Damage Reports',
+    scheduledTasksLabel: 'Scheduled Tasks'
+  },
+  es: {
+    loginTitle: 'Iniciar sesión',
+    registerTitle: 'Registrarse',
+    emailLabel: 'Correo electrónico',
+    passwordLabel: 'Contraseña',
+    confirmPasswordLabel: 'Confirmar contraseña',
+    roleLabel: 'Rol',
+    adminOption: 'Administrador',
+    fieldOption: 'Trabajador de campo',
+    loginButton: 'Iniciar sesión',
+    registerButton: 'Registrarse',
+    noAccount: '¿No tiene cuenta?',
+    registerHere: 'Regístrese aquí',
+    haveAccount: '¿Ya tiene cuenta?',
+    loginHere: 'Inicie sesión aquí',
+    forgotPassword: '¿Olvidó su contraseña?',
+    english: 'Inglés',
+    spanish: 'Español',
+    dashboard: 'Tablero',
+    damageReports: 'Informes de daños',
+    schedules: 'Horarios',
+    vaultTracker: 'Seguimiento de cámaras',
+    logout: 'Cerrar sesión'
+    ,
+    createAccount: 'Crear cuenta'
+    ,
+    welcome: 'Bienvenido',
+    damageReportsLabel: 'Informes de daños',
+    scheduledTasksLabel: 'Tareas programadas'
+  }
+};
+
+/**
+ * Helper function to retrieve a localized string. If the key is
+ * missing for the selected language, falls back to English.
+ *
+ * @param {string} key Identifier for the string
+ * @returns {string} Translated text
+ */
+function t(key) {
+  const lang = state.language || 'en';
+  return (translations[lang] && translations[lang][key]) || translations.en[key] || key;
 }
 
 /**
@@ -110,16 +193,16 @@ function renderNav() {
   navList.className = 'nav-list';
   // When user is not logged in, show login/register options
   if (!state.currentUser) {
-    navList.appendChild(createNavLink('Login', () => navigate('login')));
-    navList.appendChild(createNavLink('Register', () => navigate('register')));
+    navList.appendChild(createNavLink(t('loginButton'), () => navigate('login')));
+    navList.appendChild(createNavLink(t('registerButton'), () => navigate('register')));
   } else {
-    navList.appendChild(createNavLink('Dashboard', () => navigate('dashboard')));
-    navList.appendChild(createNavLink('Damage Reports', () => navigate('damage')));
-    navList.appendChild(createNavLink('Schedules', () => navigate('schedule')));
+    navList.appendChild(createNavLink(t('dashboard'), () => navigate('dashboard')));
+    navList.appendChild(createNavLink(t('damageReports'), () => navigate('damage')));
+    navList.appendChild(createNavLink(t('schedules'), () => navigate('schedule')));
     // Provide access to the vault tracker view for dry utilities. This
     // page shows turnover status of telecom and electrical vaults.
-    navList.appendChild(createNavLink('Vault Tracker', () => navigate('vaults')));
-    navList.appendChild(createNavLink('Logout', () => handleLogout()));
+    navList.appendChild(createNavLink(t('vaultTracker'), () => navigate('vaults')));
+    navList.appendChild(createNavLink(t('logout'), () => handleLogout()));
   }
   nav.appendChild(navList);
 }
@@ -206,24 +289,37 @@ function renderLogin(container) {
   const wrapper = document.createElement('div');
   wrapper.className = 'form-wrapper';
   wrapper.innerHTML = `
-    <h2>Login</h2>
+    <h2>${t('loginTitle')}</h2>
+    <!-- Language selector: allows users to switch between English and Spanish -->
+    <label style="display:block; margin-bottom:0.5rem;">
+      <select id="languageSelect">
+        <option value="en" ${state.language === 'en' ? 'selected' : ''}>${t('english')}</option>
+        <option value="es" ${state.language === 'es' ? 'selected' : ''}>${t('spanish')}</option>
+      </select>
+    </label>
     <form id="loginForm">
       <label>
-        Email
+        ${t('emailLabel')}
         <!-- Force email input and advise users to use their Liesfeld email address -->
         <input type="email" id="loginEmail" placeholder="user@liesfeld.com" required />
       </label>
       <label>
-        Password
+        ${t('passwordLabel')}
         <input type="password" id="loginPassword" required />
       </label>
-      <button type="submit">Login</button>
+      <button type="submit">${t('loginButton')}</button>
     </form>
-    <p><a href="#" id="forgotPassword">Forgot password?</a></p>
-    <p>No account? <a href="#" id="toRegister">Register here</a></p>
+    <p><a href="#" id="forgotPassword">${t('forgotPassword')}</a></p>
+    <p>${t('noAccount')} <a href="#" id="toRegister">${t('registerHere')}</a></p>
   `;
   container.appendChild(wrapper);
   document.getElementById('loginForm').addEventListener('submit', handleLogin);
+  // Persist language selection when changed
+  document.getElementById('languageSelect').addEventListener('change', (e) => {
+    state.language = e.target.value;
+    saveState();
+    render();
+  });
   document.getElementById('forgotPassword').addEventListener('click', (e) => {
     e.preventDefault();
     // In lieu of a real password reset mechanism, instruct the user
@@ -274,29 +370,41 @@ function renderRegister(container) {
   const wrapper = document.createElement('div');
   wrapper.className = 'form-wrapper';
   wrapper.innerHTML = `
-    <h2>Register</h2>
+    <h2>${t('registerTitle')}</h2>
+    <!-- Language selector: reuse the same select from login -->
+    <label style="display:block; margin-bottom:0.5rem;">
+      <select id="languageSelect">
+        <option value="en" ${state.language === 'en' ? 'selected' : ''}>${t('english')}</option>
+        <option value="es" ${state.language === 'es' ? 'selected' : ''}>${t('spanish')}</option>
+      </select>
+    </label>
     <form id="registerForm">
       <label>
-        Email
+        ${t('emailLabel')}
         <input type="email" id="registerEmail" placeholder="user@liesfeld.com" required />
       </label>
       <label>
-        Password
+        ${t('passwordLabel')}
         <input type="password" id="registerPassword" required />
       </label>
       <label>
-        Role
+        ${t('roleLabel')}
         <select id="registerRole">
-          <option value="admin">Admin</option>
-          <option value="field">Field Worker</option>
+          <option value="admin">${t('adminOption')}</option>
+          <option value="field">${t('fieldOption')}</option>
         </select>
       </label>
-      <button type="submit">Create Account</button>
+      <button type="submit">${t('createAccount')}</button>
     </form>
-    <p>Have an account? <a href="#" id="toLogin">Back to login</a></p>
+    <p>${t('haveAccount')} <a href="#" id="toLogin">${t('loginHere')}</a></p>
   `;
   container.appendChild(wrapper);
   document.getElementById('registerForm').addEventListener('submit', handleRegister);
+  document.getElementById('languageSelect').addEventListener('change', (e) => {
+    state.language = e.target.value;
+    saveState();
+    render();
+  });
   document.getElementById('toLogin').addEventListener('click', (e) => {
     e.preventDefault();
     navigate('login');
@@ -342,20 +450,20 @@ function renderDashboard(container) {
   const stats = document.createElement('section');
   stats.className = 'dashboard';
   stats.innerHTML = `
-    <h2>Welcome, ${name}</h2>
+    <h2>${t('welcome')}, ${name}</h2>
     <div class="stats">
       <div class="stat">
         <h3>${state.vaultDamages.length}</h3>
-        <p>Damage Reports</p>
+        <p>${t('damageReportsLabel')}</p>
       </div>
       <div class="stat">
         <h3>${state.schedules.length}</h3>
-        <p>Scheduled Tasks</p>
+        <p>${t('scheduledTasksLabel')}</p>
       </div>
     </div>
     <div class="actions">
-      <button id="toDamage">Report Damage</button>
-      <button id="toSchedule">Add Schedule</button>
+      <button id="toDamage">${t('damageReports')}</button>
+      <button id="toSchedule">${t('schedules')}</button>
     </div>
   `;
   container.appendChild(stats);
