@@ -2,7 +2,11 @@
 // This script caches the core assets so that the application continues to
 // function when the device is offline or has an unreliable connection.
 
-const CACHE_NAME = 'site-work-cache-v1';
+// Update the cache name whenever you deploy a new version of the app.
+// Changing this value causes the old cache to be discarded and fresh
+// resources to be fetched on the next visit. Increment the version
+// whenever you update application assets.
+const CACHE_NAME = 'site-work-cache-v2';
 
 // List of files to cache during the install event. If you add more
 // resources to your app (e.g. images or other scripts) include them here.
@@ -18,6 +22,8 @@ const urlsToCache = [
 
 // Install event: cache defined assets
 self.addEventListener('install', (event) => {
+  // Skip the waiting phase and activate the new service worker immediately.
+  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(urlsToCache))
@@ -58,5 +64,9 @@ self.addEventListener('activate', (event) => {
         })
       );
     })
+    // Take control of uncontrolled clients as soon as the new service worker
+    // activates. This ensures that the updated version of the app is used
+    // immediately without requiring a full page reload.
+    .then(() => self.clients.claim())
   );
 });

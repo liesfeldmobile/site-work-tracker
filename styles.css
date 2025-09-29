@@ -200,6 +200,18 @@ table.records tr:last-child td {
   border-bottom: none;
 }
 
+/* Vault tracker styles */
+.vaults .vault-controls {
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.vaults .vault-summary {
+  margin: 0.5rem 0;
+  font-weight: bold;
+}
+
 /*
  * Loader overlay
  *

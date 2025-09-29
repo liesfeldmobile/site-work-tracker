@@ -18,7 +18,11 @@ let state = {
   currentUser: null,
   users: [],
   vaultDamages: [],
-  schedules: []
+  schedules: [],
+  // Dry utility vault tracker records. Each entry describes a vault
+  // including its campus, building, identifier, progress stage and
+  // notes. See renderVaults() for usage.
+  vaults: []
 };
 
 /**
@@ -47,7 +51,9 @@ function saveState() {
     users: state.users,
     vaultDamages: state.vaultDamages,
     schedules: state.schedules,
-    currentUser: state.currentUser
+    currentUser: state.currentUser,
+    // Persist vault tracker records
+    vaults: state.vaults
   }));
 }
 
@@ -110,6 +116,9 @@ function renderNav() {
     navList.appendChild(createNavLink('Dashboard', () => navigate('dashboard')));
     navList.appendChild(createNavLink('Damage Reports', () => navigate('damage')));
     navList.appendChild(createNavLink('Schedules', () => navigate('schedule')));
+    // Provide access to the vault tracker view for dry utilities. This
+    // page shows turnover status of telecom and electrical vaults.
+    navList.appendChild(createNavLink('Vault Tracker', () => navigate('vaults')));
     navList.appendChild(createNavLink('Logout', () => handleLogout()));
   }
   nav.appendChild(navList);
@@ -162,7 +171,7 @@ function render() {
   const app = document.getElementById('app');
   const route = window.location.hash.replace('#', '');
   // Routes that require authentication
-  const privateRoutes = ['dashboard', 'damage', 'schedule'];
+  const privateRoutes = ['dashboard', 'damage', 'schedule', 'vaults'];
   if (privateRoutes.includes(route) && !state.currentUser) {
     return navigate('login');
   }
@@ -709,6 +718,194 @@ function handleLogout() {
   state.currentUser = null;
   saveState();
   navigate('login');
+}
+
+/**
+ * Render the dry utility vault tracker view. This page lists all
+ * vaults along with their progress status and notes. Users can
+ * filter by campus, add new vault entries and edit existing
+ * progress/notes inline. The summary at the top shows how many
+ * vaults have been turned over versus those still in Liesfeld's
+ * possession. Records are saved to localStorage so they persist
+ * across sessions.
+ *
+ * @param {HTMLElement} container The DOM element to render into.
+ */
+function renderVaults(container) {
+  container.innerHTML = '';
+  const section = document.createElement('section');
+  section.className = 'vaults';
+  section.innerHTML = `
+    <h2>Dry Utility Vault Tracker</h2>
+    <div class="vault-controls">
+      <label for="vaultCampusFilter">Campus:</label>
+      <select id="vaultCampusFilter">
+        <option value="">All</option>
+        <option value="RIC2">RIC2</option>
+        <option value="RIC3">RIC3</option>
+      </select>
+    </div>
+    <form id="vaultForm" class="horizontal-form">
+      <select id="vaultCampus">
+        <option value="RIC2">RIC2</option>
+        <option value="RIC3">RIC3</option>
+      </select>
+      <input type="text" id="vaultBuilding" placeholder="Building" required />
+      <input type="text" id="vaultId" placeholder="Vault ID" required />
+      <select id="vaultProgress">
+        <option value="Not Started">Not Started</option>
+        <option value="Excavated">Excavated</option>
+        <option value="Installed">Installed</option>
+        <option value="Proofed/Accessories Complete">Proofed/Accessories Complete</option>
+        <option value="Ready for Turnover">Ready for Turnover</option>
+        <option value="Turned Over">Turned Over</option>
+      </select>
+      <input type="text" id="vaultNotes" placeholder="Notes (optional)" />
+      <button type="submit">Add Vault</button>
+    </form>
+    <div id="vaultSummary" class="vault-summary"></div>
+    <table class="records" id="vaultTable">
+      <thead>
+        <tr>
+          <th>Campus</th>
+          <th>Building</th>
+          <th>Vault ID</th>
+          <th>Progress</th>
+          <th>Notes</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="vaultTableBody"></tbody>
+    </table>
+    <small><em>The progress status reflects the legend: Not Started, Excavated, Installed, Proofed/Accessories Complete, Ready for Turnover, Turned Over.</em></small>
+  `;
+  container.appendChild(section);
+  // Bind filter event
+  document.getElementById('vaultCampusFilter').addEventListener('change', () => {
+    populateVaultTable();
+    updateVaultSummary();
+  });
+  // Bind add vault form submission
+  document.getElementById('vaultForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const campus = document.getElementById('vaultCampus').value;
+    const building = document.getElementById('vaultBuilding').value.trim();
+    const vaultId = document.getElementById('vaultId').value.trim();
+    const progress = document.getElementById('vaultProgress').value;
+    const notes = document.getElementById('vaultNotes').value.trim();
+    if (!building || !vaultId) return;
+    const record = {
+      id: uuid(),
+      campus,
+      building,
+      vaultId,
+      progress,
+      notes,
+      author: state.currentUser.username
+    };
+    state.vaults.push(record);
+    saveState();
+    // Reset fields
+    document.getElementById('vaultBuilding').value = '';
+    document.getElementById('vaultId').value = '';
+    document.getElementById('vaultProgress').value = 'Not Started';
+    document.getElementById('vaultNotes').value = '';
+    populateVaultTable();
+    updateVaultSummary();
+  });
+  // Initial render
+  populateVaultTable();
+  updateVaultSummary();
+}
+
+/**
+ * Populate the vault tracker table based on current state and filter.
+ * Each row includes a select element for changing progress and a
+ * text input for editing notes. Changes persist immediately to
+ * localStorage. A delete button appears only for the record's author.
+ */
+function populateVaultTable() {
+  const tbody = document.getElementById('vaultTableBody');
+  if (!tbody) return;
+  const filter = document.getElementById('vaultCampusFilter').value;
+  tbody.innerHTML = '';
+  state.vaults.forEach(record => {
+    if (filter && record.campus !== filter) return;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${record.campus}</td>
+      <td>${record.building}</td>
+      <td>${record.vaultId}</td>
+      <td></td>
+      <td></td>
+      <td></td>
+    `;
+    // Progress select
+    const progressTd = tr.children[3];
+    const progressSelect = document.createElement('select');
+    ['Not Started','Excavated','Installed','Proofed/Accessories Complete','Ready for Turnover','Turned Over'].forEach(opt => {
+      const option = document.createElement('option');
+      option.value = opt;
+      option.textContent = opt;
+      if (opt === record.progress) option.selected = true;
+      progressSelect.appendChild(option);
+    });
+    progressSelect.addEventListener('change', () => {
+      record.progress = progressSelect.value;
+      saveState();
+      updateVaultSummary();
+    });
+    progressTd.appendChild(progressSelect);
+    // Notes input
+    const notesTd = tr.children[4];
+    const notesInput = document.createElement('input');
+    notesInput.type = 'text';
+    notesInput.value = record.notes || '';
+    notesInput.addEventListener('change', () => {
+      record.notes = notesInput.value.trim();
+      saveState();
+    });
+    notesTd.appendChild(notesInput);
+    // Actions cell
+    const actionsTd = tr.children[5];
+    if (state.currentUser && state.currentUser.username === record.author) {
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.className = 'danger';
+      delBtn.addEventListener('click', () => {
+        state.vaults = state.vaults.filter(v => v.id !== record.id);
+        saveState();
+        populateVaultTable();
+        updateVaultSummary();
+      });
+      actionsTd.appendChild(delBtn);
+    }
+    tbody.appendChild(tr);
+  });
+}
+
+/**
+ * Update the vault summary to display counts of turned over and
+ * remaining vaults according to the current campus filter. When
+ * there are no vaults, an appropriate message is shown.
+ */
+function updateVaultSummary() {
+  const summaryDiv = document.getElementById('vaultSummary');
+  if (!summaryDiv) return;
+  const filter = document.getElementById('vaultCampusFilter').value;
+  let total = 0;
+  let turnedOver = 0;
+  state.vaults.forEach(record => {
+    if (filter && record.campus !== filter) return;
+    total++;
+    if (record.progress === 'Turned Over') turnedOver++;
+  });
+  const remaining = total - turnedOver;
+  if (total === 0) {
+    summaryDiv.textContent = 'No vaults added yet.';
+  } else {
+    summaryDiv.textContent = `${turnedOver} turned over / ${remaining} remaining`;
+  }
 }
 
 // Initialize the application on page load. We first load any saved data,
