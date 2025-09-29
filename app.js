@@ -71,6 +71,29 @@ function uuid() {
 }
 
 /**
+ * Display the loading overlay. This shows a semi‑transparent full screen
+ * overlay containing the company logo which spins while the view is
+ * changing. Hide the overlay using hideLoader().
+ */
+function showLoader() {
+  const loader = document.getElementById('loader');
+  if (loader) {
+    loader.style.display = 'flex';
+  }
+}
+
+/**
+ * Hide the loading overlay. This function reverses showLoader() and
+ * returns the application to its interactive state.
+ */
+function hideLoader() {
+  const loader = document.getElementById('loader');
+  if (loader) {
+    loader.style.display = 'none';
+  }
+}
+
+/**
  * Render the navigation bar based on authentication status. The nav
  * automatically updates when state.currentUser changes.
  */
@@ -120,8 +143,14 @@ function createNavLink(text, onclick) {
  * @param {string} route The name of the route to display.
  */
 function navigate(route) {
+  // Show the loading indicator while switching views. The slight timeout
+  // ensures the loader has time to render before the next view is drawn.
+  showLoader();
   window.location.hash = route;
-  render();
+  setTimeout(() => {
+    render();
+    hideLoader();
+  }, 200);
 }
 
 /**
@@ -171,8 +200,9 @@ function renderLogin(container) {
     <h2>Login</h2>
     <form id="loginForm">
       <label>
-        Username
-        <input type="text" id="loginUsername" required />
+        Email
+        <!-- Force email input and advise users to use their Liesfeld email address -->
+        <input type="email" id="loginEmail" placeholder="user@liesfeld.com" required />
       </label>
       <label>
         Password
@@ -180,10 +210,17 @@ function renderLogin(container) {
       </label>
       <button type="submit">Login</button>
     </form>
+    <p><a href="#" id="forgotPassword">Forgot password?</a></p>
     <p>No account? <a href="#" id="toRegister">Register here</a></p>
   `;
   container.appendChild(wrapper);
   document.getElementById('loginForm').addEventListener('submit', handleLogin);
+  document.getElementById('forgotPassword').addEventListener('click', (e) => {
+    e.preventDefault();
+    // In lieu of a real password reset mechanism, instruct the user
+    // to contact their administrator or register a new account.
+    alert('Please contact your administrator to reset your password or register a new account.');
+  });
   document.getElementById('toRegister').addEventListener('click', (e) => {
     e.preventDefault();
     navigate('register');
@@ -198,15 +235,22 @@ function renderLogin(container) {
  */
 function handleLogin(e) {
   e.preventDefault();
-  const username = document.getElementById('loginUsername').value.trim();
+  // Users log in with their email address. Emails must belong to the
+  // liesfeld.com domain. The username field is now the email field.
+  const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
-  const found = state.users.find(u => u.username === username && u.password === password);
+  // Enforce domain restriction: only liesfeld.com email addresses are allowed.
+  if (!/^[^@\s]+@liesfeld\.com$/i.test(email)) {
+    alert('Please log in with your @liesfeld.com email address.');
+    return;
+  }
+  const found = state.users.find(u => u.username === email && u.password === password);
   if (found) {
     state.currentUser = { username: found.username, role: found.role };
     saveState();
     navigate('dashboard');
   } else {
-    alert('Invalid username or password.');
+    alert('Invalid email or password.');
   }
 }
 
@@ -224,8 +268,8 @@ function renderRegister(container) {
     <h2>Register</h2>
     <form id="registerForm">
       <label>
-        Username
-        <input type="text" id="registerUsername" required />
+        Email
+        <input type="email" id="registerEmail" placeholder="user@liesfeld.com" required />
       </label>
       <label>
         Password
@@ -258,14 +302,20 @@ function renderRegister(container) {
  */
 function handleRegister(e) {
   e.preventDefault();
-  const username = document.getElementById('registerUsername').value.trim();
+  const email = document.getElementById('registerEmail').value.trim();
   const password = document.getElementById('registerPassword').value;
   const role = document.getElementById('registerRole').value;
-  if (state.users.find(u => u.username === username)) {
-    alert('Username already exists. Please choose another.');
+  // Enforce liesfeld.com email addresses for registration
+  if (!/^[^@\s]+@liesfeld\.com$/i.test(email)) {
+    alert('Email must belong to the @liesfeld.com domain.');
     return;
   }
-  state.users.push({ username, password, role });
+  if (state.users.find(u => u.username.toLowerCase() === email.toLowerCase())) {
+    alert('An account with this email already exists. Please choose another or log in.');
+    return;
+  }
+  // Store the email as the username to maintain compatibility with the existing user model
+  state.users.push({ username: email, password, role });
   saveState();
   alert('Account created. You may now log in.');
   navigate('login');
@@ -317,17 +367,15 @@ function renderDamage(container) {
   section.innerHTML = `
     <h2>Damage Reports</h2>
     <form id="damageForm" class="horizontal-form">
-      <select id="damageType">
-        <option value="telecom">Telecom Vault</option>
-        <option value="electrical">Electrical Vault</option>
+      <!-- Division (major category): dry, wet or hardscape -->
+      <select id="damageDivision">
+        <option value="dry">Dry Utility</option>
+        <option value="wet">Wet Utility</option>
+        <option value="hardscape">Hardscape</option>
       </select>
+      <!-- Subcategory selects are populated dynamically based on division -->
+      <select id="damageSubcategory" style="display:none"></select>
       <input type="text" id="damageDesc" placeholder="Description of damage" required />
-      <!--
-        New input fields: photo upload, location and documenter. The photo
-        input allows uploading a picture of the damage. Location can be
-        entered manually. Documenter defaults to the current user but
-        provides the option to specify someone else if needed.
-      -->
       <input type="file" id="damagePhoto" accept="image/*" />
       <input type="text" id="damageLocation" placeholder="Location (optional)" />
       <input type="text" id="damageDocumenter" placeholder="Documenter (optional)" />
@@ -336,7 +384,8 @@ function renderDamage(container) {
     <table class="records">
       <thead>
         <tr>
-          <th>Type</th>
+          <th>Division</th>
+          <th>Subcategory</th>
           <th>Description</th>
           <th>Location</th>
           <th>Date</th>
@@ -352,7 +401,9 @@ function renderDamage(container) {
   // bind form submit
   document.getElementById('damageForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    const type = document.getElementById('damageType').value;
+    const division = document.getElementById('damageDivision').value;
+    const subcategorySelect = document.getElementById('damageSubcategory');
+    const subcategory = subcategorySelect && subcategorySelect.style.display !== 'none' ? subcategorySelect.value : '';
     const description = document.getElementById('damageDesc').value.trim();
     const location = document.getElementById('damageLocation').value.trim();
     // If the user leaves the documenter blank, default to the current user's username
@@ -364,7 +415,8 @@ function renderDamage(container) {
     function saveReport(photoData) {
       const report = {
         id: uuid(),
-        type,
+        division,
+        subcategory,
         description,
         location,
         date: new Date().toISOString(),
@@ -379,6 +431,9 @@ function renderDamage(container) {
       document.getElementById('damageLocation').value = '';
       document.getElementById('damageDocumenter').value = '';
       fileInput.value = '';
+      // Reset division to default and trigger subcategory update
+      document.getElementById('damageDivision').value = 'dry';
+      updateDamageSubcategory();
       // Re-render the damage view
       renderDamage(container);
     }
@@ -393,6 +448,10 @@ function renderDamage(container) {
       saveReport(null);
     }
   });
+  // Populate subcategory dropdown based on initial division
+  updateDamageSubcategory();
+  // Attach listener to update subcategories when division changes
+  document.getElementById('damageDivision').addEventListener('change', updateDamageSubcategory);
   populateDamageTable();
 }
 
@@ -405,8 +464,10 @@ function populateDamageTable() {
   tbody.innerHTML = '';
   state.vaultDamages.forEach(record => {
     const tr = document.createElement('tr');
+    const division = record.division || record.type || '';
     tr.innerHTML = `
-      <td>${record.type}</td>
+      <td>${division}</td>
+      <td>${record.subcategory || ''}</td>
       <td>${record.description}</td>
       <td>${record.location || ''}</td>
       <td>${new Date(record.date).toLocaleString()}</td>
@@ -429,6 +490,85 @@ function populateDamageTable() {
   });
 }
 
+// Map each division to its list of subcategories. These values feed the
+// damage report form so users can select the appropriate structure type.
+const damageSubcategories = {
+  dry: [
+    { value: 'TMH', label: 'Telecom Manhole (TMH)' },
+    { value: 'BEV', label: 'Building Entry Vault (BEV)' },
+    { value: 'Electrical Manhole', label: 'Electrical Manhole' }
+  ],
+  wet: [
+    { value: 'Sanitary', label: 'Sanitary Structure' },
+    { value: 'Waterline', label: 'Waterline' },
+    { value: 'Storm', label: 'Storm Structure' }
+  ],
+  hardscape: []
+};
+
+/**
+ * Update the subcategory dropdown for the damage report form based on
+ * which division is currently selected. If the selected division has no
+ * subcategories the dropdown is hidden.
+ */
+function updateDamageSubcategory() {
+  const division = document.getElementById('damageDivision').value;
+  const sub = document.getElementById('damageSubcategory');
+  const options = damageSubcategories[division] || [];
+  if (!options.length) {
+    sub.style.display = 'none';
+    sub.innerHTML = '';
+    return;
+  }
+  sub.style.display = 'inline-block';
+  sub.innerHTML = options
+    .map(opt => `<option value="${opt.value}">${opt.label}</option>`)
+    .join('');
+}
+
+// Options for structure types used in the schedule form when the category is
+// "Dry Utility". These match the damage report subcategories for dry utilities.
+const scheduleStructureTypes = [
+  { value: 'TMH', label: 'Telecom Manhole (TMH)' },
+  { value: 'BEV', label: 'Building Entry Vault (BEV)' },
+  { value: 'Electrical Manhole', label: 'Electrical Manhole' }
+];
+
+/**
+ * Update the conditional fields in the schedule form. When the selected
+ * category is "Dry Utility" the structure type select, set date and
+ * protected fields are shown. When the category is "Wet Utility" only
+ * the set date and protected fields are shown. For other categories
+ * these fields are hidden.
+ */
+function updateScheduleFields() {
+  const category = document.getElementById('scheduleCategory').value;
+  const typeSel = document.getElementById('scheduleStructureType');
+  const setDateInput = document.getElementById('scheduleSetDate');
+  const protectedContainer = document.getElementById('protectedContainer');
+  if (category === 'dry') {
+    // Populate type select and show it
+    typeSel.style.display = 'inline-block';
+    typeSel.innerHTML = scheduleStructureTypes
+      .map(opt => `<option value="${opt.value}">${opt.label}</option>`)
+      .join('');
+    setDateInput.style.display = 'inline-block';
+    protectedContainer.style.display = 'flex';
+  } else if (category === 'wet') {
+    // Hide type select, show set date and protected
+    typeSel.style.display = 'none';
+    typeSel.innerHTML = '';
+    setDateInput.style.display = 'inline-block';
+    protectedContainer.style.display = 'flex';
+  } else {
+    // Hide all conditional fields
+    typeSel.style.display = 'none';
+    typeSel.innerHTML = '';
+    setDateInput.style.display = 'none';
+    protectedContainer.style.display = 'none';
+  }
+}
+
 /**
  * Render the schedule management view. Includes a form for new tasks and a
  * table listing existing tasks. Users can delete their own tasks.
@@ -448,8 +588,16 @@ function renderSchedule(container) {
         <option value="hardscape">Hardscape</option>
         <option value="other">Other</option>
       </select>
+      <!-- When "Dry Utility" is selected a structure type select appears -->
+      <select id="scheduleStructureType" style="display:none"></select>
       <input type="text" id="scheduleDesc" placeholder="Task description" required />
       <input type="date" id="scheduleDate" required />
+      <!-- Set date and protected checkboxes appear for dry/wet utilities -->
+      <input type="date" id="scheduleSetDate" placeholder="Structure set date" style="display:none" />
+      <span id="protectedContainer" style="display:none; align-items:center; gap:0.25rem;">
+        <input type="checkbox" id="scheduleProtected" />
+        <label for="scheduleProtected">Protected after set</label>
+      </span>
       <!-- Additional fields: equipment needed and crew. Equipment can list
            machinery or tools required, and crew identifies which team
            will perform the work. -->
@@ -461,8 +609,11 @@ function renderSchedule(container) {
       <thead>
         <tr>
           <th>Category</th>
+          <th>Sub/Structure Type</th>
           <th>Description</th>
           <th>Date</th>
+          <th>Set Date</th>
+          <th>Protected</th>
           <th>Equipment</th>
           <th>Crew</th>
           <th>Created By</th>
@@ -473,19 +624,26 @@ function renderSchedule(container) {
     </table>
   `;
   container.appendChild(section);
-  // bind form submit
+  // Bind form submit
   document.getElementById('scheduleForm').addEventListener('submit', (e) => {
     e.preventDefault();
     const category = document.getElementById('scheduleCategory').value;
+    const structureTypeSel = document.getElementById('scheduleStructureType');
+    const structureType = structureTypeSel && structureTypeSel.style.display !== 'none' ? structureTypeSel.value : '';
     const description = document.getElementById('scheduleDesc').value.trim();
     const date = document.getElementById('scheduleDate').value;
+    const setDate = document.getElementById('scheduleSetDate').value;
+    const protectedAfter = document.getElementById('scheduleProtected').checked;
     const equipment = document.getElementById('scheduleEquipment').value.trim();
     const crew = document.getElementById('scheduleCrew').value.trim();
     const task = {
       id: uuid(),
       category,
+      structureType,
       description,
       date,
+      setDate,
+      protected: protectedAfter,
       equipment,
       crew,
       author: state.currentUser.username
@@ -496,8 +654,14 @@ function renderSchedule(container) {
     document.getElementById('scheduleDesc').value = '';
     document.getElementById('scheduleEquipment').value = '';
     document.getElementById('scheduleCrew').value = '';
+    document.getElementById('scheduleSetDate').value = '';
+    document.getElementById('scheduleProtected').checked = false;
+    document.getElementById('scheduleStructureType').value = '';
     populateScheduleTable();
   });
+  // Populate structure type select and conditional fields on load
+  updateScheduleFields();
+  document.getElementById('scheduleCategory').addEventListener('change', updateScheduleFields);
   populateScheduleTable();
 }
 
@@ -512,8 +676,11 @@ function populateScheduleTable() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${task.category}</td>
+      <td>${task.structureType || ''}</td>
       <td>${task.description}</td>
       <td>${task.date}</td>
+      <td>${task.setDate || ''}</td>
+      <td>${task.protected ? 'Yes' : ''}</td>
       <td>${task.equipment || ''}</td>
       <td>${task.crew || ''}</td>
       <td>${task.author}</td>

@@ -199,6 +199,40 @@ table.records th {
 table.records tr:last-child td {
   border-bottom: none;
 }
+
+/*
+ * Loader overlay
+ *
+ * A full‑screen overlay that appears when navigating between views. It
+ * displays the company logo in the center which continuously spins to
+ * indicate the application is working. The overlay uses a semi‑transparent
+ * white background so underlying content is obscured but still visible.
+ */
+#loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.8);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 9999;
+}
+#loader img {
+  width: 100px;
+  height: auto;
+  animation: spin 2s linear infinite;
+}
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
 button.danger {
   background: #e74c3c;
   color: white;
