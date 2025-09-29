@@ -16,8 +16,16 @@ body {
   color: #333;
 }
 
+/*
+ * Header styling. The original app used a blue navigation bar. Per user
+ * feedback, update the header to a dark theme. A darker background
+ * improves contrast with the white text and aligns better with the
+ * company’s branding. The Liesfeld logo is enlarged slightly for
+ * improved visibility.
+ */
 header {
-  background: #2d6cdf;
+  /* Dark gray/black background for the top bar */
+  background: #1a1a1a;
   color: white;
   padding: 1rem;
   display: flex;
@@ -37,8 +45,13 @@ header h1 {
 }
 
 /* Logo styling – adjust the height to suit your needs */
+/*
+ * Increase the logo height slightly. The width is kept automatic so
+ * the aspect ratio is maintained. A larger logo makes the company
+ * branding more prominent on both desktop and mobile devices.
+ */
 .logo {
-  height: 40px;
+  height: 60px;
   width: auto;
 }
 nav .nav-list {

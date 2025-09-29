@@ -322,6 +322,15 @@ function renderDamage(container) {
         <option value="electrical">Electrical Vault</option>
       </select>
       <input type="text" id="damageDesc" placeholder="Description of damage" required />
+      <!--
+        New input fields: photo upload, location and documenter. The photo
+        input allows uploading a picture of the damage. Location can be
+        entered manually. Documenter defaults to the current user but
+        provides the option to specify someone else if needed.
+      -->
+      <input type="file" id="damagePhoto" accept="image/*" />
+      <input type="text" id="damageLocation" placeholder="Location (optional)" />
+      <input type="text" id="damageDocumenter" placeholder="Documenter (optional)" />
       <button type="submit">Add</button>
     </form>
     <table class="records">
@@ -329,8 +338,10 @@ function renderDamage(container) {
         <tr>
           <th>Type</th>
           <th>Description</th>
+          <th>Location</th>
           <th>Date</th>
-          <th>Reported By</th>
+          <th>Documenter</th>
+          <th>Photo</th>
           <th></th>
         </tr>
       </thead>
@@ -343,17 +354,44 @@ function renderDamage(container) {
     e.preventDefault();
     const type = document.getElementById('damageType').value;
     const description = document.getElementById('damageDesc').value.trim();
-    const report = {
-      id: uuid(),
-      type,
-      description,
-      date: new Date().toISOString(),
-      author: state.currentUser.username
-    };
-    state.vaultDamages.push(report);
-    saveState();
-    document.getElementById('damageDesc').value = '';
-    renderDamage(container);
+    const location = document.getElementById('damageLocation').value.trim();
+    // If the user leaves the documenter blank, default to the current user's username
+    const documenterInput = document.getElementById('damageDocumenter').value.trim();
+    const documenter = documenterInput || state.currentUser.username;
+    const fileInput = document.getElementById('damagePhoto');
+    const file = fileInput.files[0];
+    // Helper function to persist the report to state and re-render
+    function saveReport(photoData) {
+      const report = {
+        id: uuid(),
+        type,
+        description,
+        location,
+        date: new Date().toISOString(),
+        documenter,
+        author: state.currentUser.username,
+        photo: photoData || null
+      };
+      state.vaultDamages.push(report);
+      saveState();
+      // Reset form fields
+      document.getElementById('damageDesc').value = '';
+      document.getElementById('damageLocation').value = '';
+      document.getElementById('damageDocumenter').value = '';
+      fileInput.value = '';
+      // Re-render the damage view
+      renderDamage(container);
+    }
+    // If a photo is provided, read it as a Data URL. Otherwise save immediately.
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        saveReport(reader.result);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      saveReport(null);
+    }
   });
   populateDamageTable();
 }
@@ -370,8 +408,10 @@ function populateDamageTable() {
     tr.innerHTML = `
       <td>${record.type}</td>
       <td>${record.description}</td>
+      <td>${record.location || ''}</td>
       <td>${new Date(record.date).toLocaleString()}</td>
-      <td>${record.author}</td>
+      <td>${record.documenter || record.author}</td>
+      <td>${record.photo ? `<img src="${record.photo}" alt="damage photo" style="height:40px; width:auto;">` : ''}</td>
       <td></td>
     `;
     if (state.currentUser && state.currentUser.username === record.author) {
@@ -410,6 +450,11 @@ function renderSchedule(container) {
       </select>
       <input type="text" id="scheduleDesc" placeholder="Task description" required />
       <input type="date" id="scheduleDate" required />
+      <!-- Additional fields: equipment needed and crew. Equipment can list
+           machinery or tools required, and crew identifies which team
+           will perform the work. -->
+      <input type="text" id="scheduleEquipment" placeholder="Equipment needed (optional)" />
+      <input type="text" id="scheduleCrew" placeholder="Crew (optional)" />
       <button type="submit">Add</button>
     </form>
     <table class="records">
@@ -418,6 +463,8 @@ function renderSchedule(container) {
           <th>Category</th>
           <th>Description</th>
           <th>Date</th>
+          <th>Equipment</th>
+          <th>Crew</th>
           <th>Created By</th>
           <th></th>
         </tr>
@@ -432,16 +479,23 @@ function renderSchedule(container) {
     const category = document.getElementById('scheduleCategory').value;
     const description = document.getElementById('scheduleDesc').value.trim();
     const date = document.getElementById('scheduleDate').value;
+    const equipment = document.getElementById('scheduleEquipment').value.trim();
+    const crew = document.getElementById('scheduleCrew').value.trim();
     const task = {
       id: uuid(),
       category,
       description,
       date,
+      equipment,
+      crew,
       author: state.currentUser.username
     };
     state.schedules.push(task);
     saveState();
+    // Reset input fields
     document.getElementById('scheduleDesc').value = '';
+    document.getElementById('scheduleEquipment').value = '';
+    document.getElementById('scheduleCrew').value = '';
     populateScheduleTable();
   });
   populateScheduleTable();
@@ -460,6 +514,8 @@ function populateScheduleTable() {
       <td>${task.category}</td>
       <td>${task.description}</td>
       <td>${task.date}</td>
+      <td>${task.equipment || ''}</td>
+      <td>${task.crew || ''}</td>
       <td>${task.author}</td>
       <td></td>
     `;
