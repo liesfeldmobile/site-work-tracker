@@ -46,12 +46,18 @@ function loadState() {
     if ((!state.vaults || state.vaults.length === 0) && typeof window !== 'undefined' && window.DEFAULT_VAULTS) {
       state.vaults = window.DEFAULT_VAULTS.map(v => ({ ...v }));
     }
-    // If there are no vault records saved yet, initialize with the
-    // imported default set. This allows the vault tracker to be
-    // pre-populated with all known vaults on first use. Do not
-    // override existing records to preserve user edits.
+    // If there are no vault records saved yet and nothing has been
+    // imported from window.DEFAULT_VAULTS, fall back to any built-in
+    // defaults. In earlier versions this referenced DEFAULT_VAULTS,
+    // but that constant may no longer exist after the dataset was moved
+    // into separate files. Use DEFAULT_VAULTS_OLD if defined or
+    // initialize with an empty array to avoid a ReferenceError.
     if (!state.vaults || state.vaults.length === 0) {
-      state.vaults = DEFAULT_VAULTS.map(rec => ({ ...rec }));
+      if (typeof DEFAULT_VAULTS_OLD !== 'undefined') {
+        state.vaults = DEFAULT_VAULTS_OLD.map(rec => ({ ...rec }));
+      } else {
+        state.vaults = [];
+      }
     }
   } catch (e) {
     console.error('Failed to load state from localStorage', e);
@@ -366,7 +372,11 @@ function render() {
   const app = document.getElementById('app');
   const route = window.location.hash.replace('#', '');
   // Routes that require authentication
-  const privateRoutes = ['dashboard', 'damage', 'schedule', 'vaults'];
+  // Routes that require authentication.  Leave 'vaults' out of this list so
+  // navigating to the vault tracker doesn't immediately redirect back
+  // to login. Instead, the 'vaults' case below performs its own
+  // authentication check and will show the login view if needed.
+  const privateRoutes = ['dashboard', 'damage', 'schedule'];
   if (privateRoutes.includes(route) && !state.currentUser) {
     return navigate('login');
   }
