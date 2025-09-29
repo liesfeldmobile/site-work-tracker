@@ -33,21 +33,32 @@ self.addEventListener('install', (event) => {
 // Fetch event: respond with cached resources when available or fall back
 // to the network. If the request isn't found in the cache, it is fetched
 // from the network and then stored for future use.
+// Intercept fetch requests to serve cached resources for our own site while
+// allowing third‑party requests to pass through untouched. This prevents the
+// service worker from caching and responding to requests for external domains.
 self.addEventListener('fetch', (event) => {
+  const requestUrl = new URL(event.request.url);
+  // Only handle GET requests from our own origin
+  if (event.request.method !== 'GET' || requestUrl.origin !== self.location.origin) {
+    return;
+  }
   event.respondWith(
-    caches.match(event.request).then((response) => {
-      if (response) {
-        return response;
+    caches.match(event.request).then((cachedResponse) => {
+      if (cachedResponse) {
+        return cachedResponse;
       }
-      return fetch(event.request).then((networkResponse) => {
-        // Save a copy to cache for next time (only for GET requests)
-        if (event.request.method === 'GET') {
+      return fetch(event.request)
+        .then((networkResponse) => {
+          // Cache the response asynchronously for future use
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, networkResponse.clone());
           });
-        }
-        return networkResponse;
-      });
+          return networkResponse;
+        })
+        .catch(() => {
+          // If the network fails, attempt to serve from cache
+          return caches.match(event.request);
+        });
     })
   );
 });
