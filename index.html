@@ -27,6 +27,12 @@
     <img src="icons/company-logo.png" alt="Loading" class="loader-icon" />
   </div>
   <!-- Application logic -->
+  <!-- Load default vault data from separate chunks before app.js. These two scripts
+       populate the global DEFAULT_VAULTS array by concatenating their chunks. Splitting
+       the dataset into smaller files helps avoid browser upload issues when
+       updating the GitHub repository. -->
+  <script src="vault_part1.js"></script>
+  <script src="vault_part2.js"></script>
   <script src="app.js" defer></script>
 </body>
 </html>
