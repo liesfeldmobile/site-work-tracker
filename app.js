@@ -40,6 +40,13 @@ function loadState() {
     if (saved) {
       state = { ...state, ...saved };
     }
+    // If there are no vault records saved yet, initialize with the
+    // imported default set. This allows the vault tracker to be
+    // pre-populated with all known vaults on first use. Do not
+    // override existing records to preserve user edits.
+    if (!state.vaults || state.vaults.length === 0) {
+      state.vaults = DEFAULT_VAULTS.map(rec => ({ ...rec }));
+    }
   } catch (e) {
     console.error('Failed to load state from localStorage', e);
   }
@@ -146,6 +153,89 @@ const translations = {
     scheduledTasksLabel: 'Tareas programadas'
   }
 };
+
+// Default vault records imported from the provided Excel sheet. These
+// represent all vaults for the RIC3 campus (and future campuses) along
+// with their associated building and identifier. Progress is initially
+// set to "Not Started" and notes/author left blank. This array is
+// loaded into state.vaults on first run if no existing vault data
+// exists in localStorage. See loadState() for usage.
+const DEFAULT_VAULTS = [
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 02", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 03", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 04", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 08", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "CAV 01", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "CAV 02", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 01", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 02", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 03", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 04", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "BEV 01", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 06", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 07", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 23", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 24", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 25", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 26", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 27", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 28", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 29", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 30", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 31", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 38", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 39", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 46", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 47", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 48", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 49", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 50", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC1/Sub", "vaultId": "TMH 51", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "BEV 05", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "BEV 06", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "BEV 07", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "BEV 11", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 08", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 09", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 45", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 21", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 22", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 40", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 44", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 52", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC2", "vaultId": "TMH 53", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "BEV 09", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "BEV 10", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "BEV 12", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "TMH 10", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "TMH 11", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "TMH 12", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "TMH 13", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "TMH 14", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC3", "vaultId": "TMH 41", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "BEV 14", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "BEV 16", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "BEV 13", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "BEV 15", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "TMH 32", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "TMH 33", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "TMH 34", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "TMH 35", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "TMH 36", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC4", "vaultId": "TMH 37", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 20", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "BEV 18", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "BEV 20", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "BEV 17", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "BEV 19", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 15", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 16", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 17", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 18", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 19", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC5", "vaultId": "TMH 43", "progress": "Not Started", "notes": "", "author": "" },
+  { "campus": "RIC3", "building": "DC6", "vaultId": "TMH 42", "progress": "Not Started", "notes": "", "author": "" }
+];
 
 /**
  * Helper function to retrieve a localized string. If the key is
@@ -270,6 +360,15 @@ function render() {
       break;
     case 'schedule':
       renderSchedule(app);
+      break;
+    case 'vaults':
+      // Render vault tracker for authenticated users. If somehow the user
+      // navigates here without being logged in, fall back to login view.
+      if (state.currentUser) {
+        renderVaults(app);
+      } else {
+        renderLogin(app);
+      }
       break;
     case 'login':
     default:
