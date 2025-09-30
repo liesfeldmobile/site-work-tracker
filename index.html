@@ -1,40 +1,80 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Progressive Web App manifest declaration -->
-  <link rel="manifest" href="manifest.json" />
-  <!-- Custom styles for layout and responsiveness -->
-  <link rel="stylesheet" href="styles.css" />
-  <title>Site Work Tracker</title>
+    <meta charset="UTF-8">
+    <title>Site Work Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="manifest" href="manifest.json">
+    <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Header shows the title and navigation bar. Navigation is built dynamically in app.js -->
-  <header>
-    <div class="branding">
-      <img src="icons/company-logo.png" alt="Company Logo" class="logo" />
-      <h1>Site Work Tracker</h1>
-    </div>
     <nav id="navbar"></nav>
-  </header>
-  <!-- Main content container. Views are injected here by the JavaScript router. -->
-  <main id="app"></main>
+    <main id="app">
 
-  <!-- Loader overlay displayed during page transitions -->
-  <!-- The loader contains the company logo which spins to indicate loading. -->
-  <div id="loader" class="loader" style="display:none;">
-    <img src="icons/company-logo.png" alt="Loading" class="loader-icon" />
-  </div>
-  <!-- Application logic -->
-  <!-- Load default vault data from separate chunks before app.js. These two scripts
-       populate the global DEFAULT_VAULTS array by concatenating their chunks. Splitting
-       the dataset into smaller files helps avoid browser upload issues when
-       updating the GitHub repository. -->
-    <script src="vault_part1.js"></script>
-    <script src="vault_part2.js"></script>
-    <!-- Additional RIC2 dataset -->
-    <script src="vault_ric2.js"></script>
-  <script src="app.js" defer></script>
+        <!-- Registration Form -->
+        <form id="registerForm" onsubmit="handleRegister(event)">
+            <h2>Register</h2>
+            <input type="email" id="registerEmail" placeholder="Email" required>
+            <input type="password" id="registerPassword" placeholder="Password" required>
+            <select id="registerRole">
+                <option value="admin">Admin</option>
+                <option value="field">Field Worker</option>
+            </select>
+            <button type="submit">Register</button>
+        </form>
+
+        <!-- Login Form -->
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <h2>Login</h2>
+            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="password" id="loginPassword" placeholder="Password" required>
+            <button type="submit">Login</button>
+        </form>
+
+        <!-- Damage Report Form -->
+        <form id="damageForm" onsubmit="handleDamageReport(event)">
+            <h2>Damage Report</h2>
+            <input type="text" id="damageDesc" placeholder="Description" required>
+            <select id="damageDivision">
+                <option value="dry">Dry Utility</option>
+                <option value="wet">Wet Utility</option>
+                <option value="hardscape">Hardscape</option>
+            </select>
+            <button type="submit">Add Report</button>
+        </form>
+
+        <!-- Schedule Form -->
+        <form id="scheduleForm" onsubmit="handleSchedule(event)">
+            <h2>Schedule Task</h2>
+            <input type="date" id="scheduleDate" required>
+            <input type="text" id="scheduleDesc" placeholder="Description" required>
+            <select id="scheduleCategory">
+                <option value="dry">Dry Utility</option>
+                <option value="wet">Wet Utility</option>
+                <option value="hardscape">Hardscape</option>
+            </select>
+            <button type="submit">Add Schedule</button>
+        </form>
+
+        <!-- Vault Form -->
+        <form id="vaultForm" onsubmit="handleVault(event)">
+            <h2>Vault Tracker</h2>
+            <input type="text" id="vaultCampus" placeholder="Campus" required>
+            <input type="text" id="vaultBuilding" placeholder="Building" required>
+            <input type="text" id="vaultId" placeholder="Vault ID" required>
+            <select id="vaultProgress">
+                <option value="Not Started">Not Started</option>
+                <option value="Excavated">Excavated</option>
+                <option value="Installed">Installed</option>
+                <option value="Proofed/Accessories Complete">Proofed/Accessories Complete</option>
+                <option value="Ready for Turnover">Ready for Turnover</option>
+                <option value="Turned Over">Turned Over</option>
+            </select>
+            <input type="text" id="vaultNotes" placeholder="Notes">
+            <button type="submit">Add Vault</button>
+        </form>
+
+    </main>
+    <script src="app.js"></script>
 </body>
 </html>
