@@ -2,38 +2,40 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Site Work Tracker</title>
+    <title>Liesfeld Site Work Tracker</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <!-- LOGIN PAGE -->
     <div id="loginPage" class="page">
         <img src="logo.png" alt="Site Work Logo" class="logo">
         <h2>Login</h2>
         <form id="loginForm" onsubmit="handleLogin(event)">
-            <input type="email" id="loginEmail" placeholder="Email" required>
+            <input type="email" id="loginEmail" placeholder="Email" required pattern="^[a-zA-Z0-9._%+-]+@liesfeld.com$">
             <input type="password" id="loginPassword" placeholder="Password" required>
             <button type="submit">Login</button>
         </form>
         <p>Need an account?</p>
         <button onclick="showRegister()">Register</button>
     </div>
-
+    <!-- REGISTER PAGE -->
     <div id="registerPage" class="page" style="display:none;">
         <img src="logo.png" alt="Site Work Logo" class="logo">
         <h2>Register</h2>
         <form id="registerForm" onsubmit="handleRegister(event)">
-            <input type="email" id="registerEmail" placeholder="Email" required>
+            <input type="email" id="registerEmail" placeholder="Email (@liesfeld.com only)" required pattern="^[a-zA-Z0-9._%+-]+@liesfeld.com$">
             <input type="password" id="registerPassword" placeholder="Password" required>
-            <select id="registerRole">
+            <select id="registerRole" required>
                 <option value="admin">Admin</option>
                 <option value="field">Field Worker</option>
             </select>
             <button type="submit">Register</button>
         </form>
+        <p id="registerError" style="color:#c90000;display:none;"></p>
         <button onclick="showLogin()">Back to Login</button>
     </div>
-
+    <!-- DASHBOARD -->
     <div id="dashboard" class="page" style="display:none;">
         <nav>
             <img src="logo.png" alt="Site Work Logo" class="logo-nav">
@@ -44,7 +46,30 @@
         </nav>
         <div id="dashboardContent"></div>
     </div>
-
     <script src="app.js"></script>
+    <script>
+        // Extra form validation for @liesfeld.com
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById('registerForm').onsubmit = function(e){
+              var email = document.getElementById('registerEmail').value;
+              if (!email.match(/^[a-zA-Z0-9._%+-]+@liesfeld.com$/)) {
+                e.preventDefault();
+                document.getElementById('registerError').textContent = "Registration is restricted to @liesfeld.com emails.";
+                document.getElementById('registerError').style.display = "block";
+                return false;
+              }
+              document.getElementById('registerError').style.display = "none";
+              // Let app.js handle registration
+            }
+            document.getElementById('loginForm').onsubmit = function(e){
+              var email = document.getElementById('loginEmail').value;
+              if (!email.match(/^[a-zA-Z0-9._%+-]+@liesfeld.com$/)) {
+                e.preventDefault();
+                alert("Login is restricted to @liesfeld.com emails.");
+                return false;
+              }
+            }
+        });
+    </script>
 </body>
 </html>
