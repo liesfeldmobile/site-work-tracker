@@ -28,11 +28,12 @@ window.showTab = showTab;
 
 // Damage Reports Logic
 let damageReports = [];
+let damageFiles = [];
 function renderDamageReports() {
   const container = document.getElementById('damageReports');
   container.innerHTML = `
     <h3>Damage Reports</h3>
-    <form id="damageReportForm">
+    <form id="damageReportForm" enctype="multipart/form-data">
       <input placeholder="Campus" id="drCampus" required>
       <input placeholder="Building" id="drBuilding" required>
       <input placeholder="Location" id="drLocation" required>
@@ -50,12 +51,16 @@ function renderDamageReports() {
         <option value="N">Photos: No</option>
       </select>
       <textarea id="drNotes" placeholder="Notes / Follow-up"></textarea>
+      <label>Attach File(s): <input type="file" id="drFile" accept="image/*,video/*,.pdf,.doc,.docx" multiple></label>
       <button type="submit">Add Report</button>
     </form>
     <ul id="damageReportList"></ul>
   `;
   document.getElementById('damageReportForm').onsubmit = function(e) {
     e.preventDefault();
+    let fileList = Array.from(drFile.files);
+    damageFiles.push(fileList);
+
     const report = {
       campus: drCampus.value,
       building: drBuilding.value,
@@ -70,7 +75,8 @@ function renderDamageReports() {
       crew: drCrew.value,
       verifiedBy: drVerifiedBy.value,
       photos: drPhotos.value,
-      notes: drNotes.value
+      notes: drNotes.value,
+      files: fileList.length
     };
     damageReports.push(report);
     renderDamageReportList();
@@ -82,12 +88,14 @@ function renderDamageReportList() {
   document.getElementById('damageReportList').innerHTML = damageReports.map((r, idx) =>
     `<li>
       <b>${r.campus} ${r.building}:</b> ${r.type} - ${r.description}
+      ${r.files ? `<br><em>${r.files} file(s) attached</em>` : ""}
       <button onclick="deleteDamageReport(${idx})">Delete</button>
     </li>`
   ).join('');
 }
 window.deleteDamageReport = function(idx) {
   damageReports.splice(idx, 1);
+  damageFiles.splice(idx, 1);
   renderDamageReportList();
 };
 
@@ -135,15 +143,25 @@ window.deleteUtilitySchedule = function(idx) {
   renderUtilityScheduleList();
 };
 
-// Vault Tracker Logic
+// Vault Tracker Logic (with manual entry form and interactive update)
+let manualVaults = [];
 function getVaultData() {
-  return window.DEFAULTVAULTS || [];
+  return [...(window.DEFAULTVAULTS || []), ...manualVaults];
 }
 function renderVaultTracker() {
   const vaults = getVaultData();
   const container = document.getElementById('vaultTracker');
   container.innerHTML = `
     <h3>Vault Tracker</h3>
+    <form id="vaultForm">
+      <input placeholder="Campus" id="vCampus" required>
+      <input placeholder="Building" id="vBuilding" required>
+      <input placeholder="Vault ID" id="vVaultId" required>
+      <input placeholder="Category" id="vCategory">
+      <input placeholder="Progress" id="vProgress">
+      <input placeholder="Notes" id="vNotes">
+      <button type="submit">Add Vault Entry</button>
+    </form>
     <table border="1" cellpadding="4">
       <thead>
         <tr><th>Campus</th><th>Building</th><th>Vault ID</th><th>Category</th><th>Progress</th><th>Notes</th><th>Update</th></tr>
@@ -151,16 +169,12 @@ function renderVaultTracker() {
       <tbody>
         ${vaults.map((v, idx) =>
           `<tr>
-            <td>${v.campus}</td>
-            <td>${v.building}</td>
-            <td>${v.vaultId}</td>
-            <td>${v.category || ''}</td>
-            <td>
-              <input value="${v.progress || ''}" data-idx="${idx}" class="vaultProgress">
-            </td>
-            <td>
-              <input value="${v.notes || ''}" data-idx="${idx}" class="vaultNotes">
-            </td>
+            <td><input value="${v.campus}" data-idx="${idx}" class="vaultCampus"></td>
+            <td><input value="${v.building}" data-idx="${idx}" class="vaultBuilding"></td>
+            <td><input value="${v.vaultId}" data-idx="${idx}" class="vaultId"></td>
+            <td><input value="${v.category || ''}" data-idx="${idx}" class="vaultCategory"></td>
+            <td><input value="${v.progress || ''}" data-idx="${idx}" class="vaultProgress"></td>
+            <td><input value="${v.notes || ''}" data-idx="${idx}" class="vaultNotes"></td>
             <td>
               <button onclick="updateVault(${idx})">Update</button>
             </td>
@@ -169,9 +183,26 @@ function renderVaultTracker() {
       </tbody>
     </table>
   `;
+  document.getElementById('vaultForm').onsubmit = function(e) {
+    e.preventDefault();
+    manualVaults.push({
+      campus: vCampus.value,
+      building: vBuilding.value,
+      vaultId: vVaultId.value,
+      category: vCategory.value,
+      progress: vProgress.value,
+      notes: vNotes.value,
+    });
+    renderVaultTracker();
+    this.reset();
+  };
 }
 window.updateVault = function(idx) {
   const vaults = getVaultData();
+  vaults[idx].campus = document.querySelector(`.vaultCampus[data-idx="${idx}"]`).value;
+  vaults[idx].building = document.querySelector(`.vaultBuilding[data-idx="${idx}"]`).value;
+  vaults[idx].vaultId = document.querySelector(`.vaultId[data-idx="${idx}"]`).value;
+  vaults[idx].category = document.querySelector(`.vaultCategory[data-idx="${idx}"]`).value;
   vaults[idx].progress = document.querySelector(`.vaultProgress[data-idx="${idx}"]`).value;
   vaults[idx].notes = document.querySelector(`.vaultNotes[data-idx="${idx}"]`).value;
   renderVaultTracker();
@@ -185,6 +216,7 @@ function renderDashboardContent() {
   showTab('damageReports');
 }
 
+// Auth and navigation logic unchanged
 function showLogin() {
   document.getElementById('registerPage').style.display = "none";
   document.getElementById('dashboard').style.display = "none";
