@@ -1,6 +1,10 @@
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
-const supabase = createClient('https://sawnurwzfmkdjpafunxa.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0');
+const supabase = createClient(
+  'https://sawnurwzfmkdjpafunxa.supabase.co',
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0'
+);
 
+// Data containers
 let manualVaults = [];
 let importedVaults = [];
 function getVaultData() {
@@ -32,7 +36,7 @@ function showDashboard() {
   setupTabListeners();
 }
 
-// Navigation
+// Navigation tabs
 function setupTabListeners() {
   document.querySelectorAll('.tabBtn').forEach(btn => {
     btn.onclick = () => showTab(btn.dataset.tab);
@@ -65,7 +69,7 @@ function handleExcelUpload(event) {
       progress: header.findIndex(h => /progress/i.test(h)),
       notes: header.findIndex(h => /notes?/i.test(h))
     };
-    for(let i=headerRowIdx+1;i<rows.length;i++) {
+    for(let i = headerRowIdx + 1; i < rows.length; i++) {
       const row = rows[i];
       if (!row || !row[fieldMap.campus]) continue;
       importedVaults.push({
@@ -107,10 +111,10 @@ function renderDamageReports() {
         <option value="N">Photos: No</option>
       </select>
       <textarea id="drNotes" placeholder="Notes / Follow-up"></textarea>
-      <label>Attach File(s): <input type="file" id="drFile" accept="image/*,video/*,.pdf,.doc,.docx" multiple></label>
+      Attach File(s): <input type="file" id="drFile" accept="image/*,video/*,.pdf,.doc,.docx" multiple>
       <button type="submit">Add Report</button>
     </form>
-    <ul id="damageReportList"></ul>
+    <div id="damageReportList"></div>
   `;
   document.getElementById('damageReportForm').onsubmit = function(e) {
     e.preventDefault();
@@ -140,11 +144,11 @@ function renderDamageReports() {
 }
 function renderDamageReportList() {
   document.getElementById('damageReportList').innerHTML = damageReports.map((r, idx) =>
-    `<li>
-      <b>${r.campus} ${r.building}:</b> ${r.type} - ${r.description}
-      ${r.files ? `<br><em>${r.files} file(s) attached</em>` : ""}
+    `<div>
+      <strong>${r.campus} ${r.building}:</strong> ${r.type} - ${r.description}
+      ${r.files ? `<em>${r.files} file(s) attached</em>` : ""}
       <button onclick="deleteDamageReport(${idx})">Delete</button>
-    </li>`
+    </div>`
   ).join('');
 }
 window.deleteDamageReport = function(idx) {
@@ -167,7 +171,7 @@ function renderUtilitySchedules() {
       <input placeholder="Notes" id="usNotes">
       <button type="submit">Add Task</button>
     </form>
-    <ul id="utilityScheduleList"></ul>
+    <div id="utilityScheduleList"></div>
   `;
   document.getElementById('utilityScheduleForm').onsubmit = function(e) {
     e.preventDefault();
@@ -186,10 +190,10 @@ function renderUtilitySchedules() {
 }
 function renderUtilityScheduleList() {
   document.getElementById('utilityScheduleList').innerHTML = utilitySchedules.map((task, idx) =>
-    `<li>
-      <b>${task.name}:</b> ${task.type} (${task.date})
+    `<div>
+      <strong>${task.name}:</strong> ${task.type} (${task.date})
       <button onclick="deleteUtilitySchedule(${idx})">Delete</button>
-    </li>`
+    </div>`
   ).join('');
 }
 window.deleteUtilitySchedule = function(idx) {
@@ -200,8 +204,7 @@ window.deleteUtilitySchedule = function(idx) {
 function renderVaultTracker() {
   const vaults = getVaultData();
   const container = document.getElementById('vaultTracker');
-  container.innerHTML = document.getElementById('excelUploadForm').outerHTML + `
-    <h3>Vault Tracker</h3>
+  container.innerHTML = `
     <form id="vaultForm">
       <input placeholder="Campus" id="vCampus" required>
       <input placeholder="Building" id="vBuilding" required>
@@ -211,24 +214,8 @@ function renderVaultTracker() {
       <input placeholder="Notes" id="vNotes">
       <button type="submit">Add Vault Entry</button>
     </form>
-    <table border="1" cellpadding="4">
-      <thead>
-        <tr><th>Campus</th><th>Building</th><th>Vault ID</th><th>Category</th><th>Progress</th><th>Notes</th><th>Update</th></tr>
-      </thead>
-      <tbody>
-        ${vaults.map((v, idx) =>
-          `<tr>
-            <td><input value="${v.campus}" data-idx="${idx}" class="vaultCampus"></td>
-            <td><input value="${v.building}" data-idx="${idx}" class="vaultBuilding"></td>
-            <td><input value="${v.vaultId}" data-idx="${idx}" class="vaultId"></td>
-            <td><input value="${v.category || ''}" data-idx="${idx}" class="vaultCategory"></td>
-            <td><input value="${v.progress || ''}" data-idx="${idx}" class="vaultProgress"></td>
-            <td><input value="${v.notes || ''}" data-idx="${idx}" class="vaultNotes"></td>
-            <td><button onclick="updateVault(${idx})">Update</button></td>
-          </tr>`
-        ).join('')}
-      </tbody>
-    </table>
+    <input type="file" id="vaultExcelInput">
+    <div id="vaultListContainer"></div>
   `;
   document.getElementById('vaultForm').onsubmit = function(e) {
     e.preventDefault();
@@ -238,12 +225,41 @@ function renderVaultTracker() {
       vaultId: vVaultId.value,
       category: vCategory.value,
       progress: vProgress.value,
-      notes: vNotes.value,
+      notes: vNotes.value
     });
     renderVaultTracker();
     this.reset();
   };
   document.getElementById('vaultExcelInput').addEventListener('change', handleExcelUpload);
+
+  document.getElementById('vaultListContainer').innerHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Campus</th>
+          <th>Building</th>
+          <th>Vault ID</th>
+          <th>Category</th>
+          <th>Progress</th>
+          <th>Notes</th>
+          <th>Update</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${vaults.map((v, idx) => `
+          <tr>
+            <td><input value="${v.campus}" data-idx="${idx}" class="vaultCampus"></td>
+            <td><input value="${v.building}" data-idx="${idx}" class="vaultBuilding"></td>
+            <td><input value="${v.vaultId}" data-idx="${idx}" class="vaultId"></td>
+            <td><input value="${v.category || ''}" data-idx="${idx}" class="vaultCategory"></td>
+            <td><input value="${v.progress || ''}" data-idx="${idx}" class="vaultProgress"></td>
+            <td><input value="${v.notes || ''}" data-idx="${idx}" class="vaultNotes"></td>
+            <td><button onclick="updateVault(${idx})">Update</button></td>
+          </tr>
+        `).join('')}
+      </tbody>
+    </table>
+  `;
 }
 window.updateVault = function(idx) {
   const vaults = getVaultData();
@@ -256,6 +272,7 @@ window.updateVault = function(idx) {
   renderVaultTracker();
 };
 
+// Render all dashboard sections
 function renderDashboardContent() {
   renderDamageReports();
   renderUtilitySchedules();
@@ -266,7 +283,9 @@ function renderDashboardContent() {
 // --- Auth/navigation logic ---
 async function registerUser(email, password, role) {
   const { data, error } = await supabase.auth.signUp({
-    email, password, options: { data: { role } }
+    email,
+    password,
+    options: { data: { role } }
   });
   if (error) {
     document.getElementById('registerError').textContent = error.message;
@@ -277,7 +296,8 @@ async function registerUser(email, password, role) {
 }
 async function loginUser(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({
-    email, password
+    email,
+    password
   });
   if (error) {
     document.getElementById('loginMsg').textContent = error.message;
@@ -329,4 +349,7 @@ window.onload = function() {
   document.getElementById('switchToRegister').onclick = showRegister;
   document.getElementById('backToLogin').onclick = showLogin;
   document.getElementById('loginForm').onsubmit = handleLogin;
-  document.getElementById('registerForm
+  document.getElementById('registerForm').onsubmit = handleRegister;
+  document.getElementById('resendConfirm').onclick = handleResendConfirm;
+  showLogin();
+};
