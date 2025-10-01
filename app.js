@@ -14,22 +14,25 @@ function getVaultData() {
   ];
 }
 
-window.onload = function() {
-  document.getElementById('switchToRegister').onclick = showRegister;
-  document.getElementById('loginForm').onsubmit = handleLogin;
-  document.getElementById('registerForm').onsubmit = handleRegister;
-  document.getElementById('resendConfirm').onclick = handleResendConfirm;
-  // EXCEL UPLOAD LISTENER
-  document.getElementById('vaultExcelInput').addEventListener('change', handleExcelUpload);
-  showLogin();
-};
+function showLogin() {
+  document.getElementById('registerPage').style.display = "none";
+  document.getElementById('dashboard').style.display = "none";
+  document.getElementById('loginPage').style.display = "block";
+  document.getElementById('loginMsg').style.display = "none";
+  document.getElementById('resendConfirm').style.display = "none";
+}
+function showRegister() {
+  document.getElementById('loginPage').style.display = "none";
+  document.getElementById('registerPage').style.display = "block";
+  document.getElementById('registerError').style.display = "none";
+}
+window.showRegister = showRegister;
 
 function setupTabListeners() {
   document.querySelectorAll('.tabBtn').forEach(btn => {
     btn.onclick = () => showTab(btn.dataset.tab);
   });
 }
-
 function showTab(tabName) {
   for (const section of document.querySelectorAll('.tabSection'))
     section.style.display = 'none';
@@ -75,7 +78,7 @@ function handleExcelUpload(event) {
   reader.readAsArrayBuffer(file);
 }
 
-// Damage Reports Logic (unchanged, provides upload/file fields, etc.)
+// Damage Reports Logic
 let damageReports = [];
 let damageFiles = [];
 function renderDamageReports() {
@@ -146,20 +149,50 @@ window.deleteDamageReport = function(idx) {
   renderDamageReportList();
 };
 
-// Utility Schedules Logic (unchanged)
+// Utility Schedules Logic 
 let utilitySchedules = [];
 function renderUtilitySchedules() {
-  // ... unchanged, omitted for space ...
+  const container = document.getElementById('utilitySchedules');
+  container.innerHTML = `
+    <h3>Utility Schedules</h3>
+    <form id="utilityScheduleForm">
+      <input placeholder="Task Name" id="usTask" required>
+      <input type="date" id="usDate" required>
+      <input placeholder="Utility Type" id="usType" required>
+      <input placeholder="Crew Assigned" id="usCrew">
+      <input placeholder="Notes" id="usNotes">
+      <button type="submit">Add Task</button>
+    </form>
+    <ul id="utilityScheduleList"></ul>
+  `;
+  document.getElementById('utilityScheduleForm').onsubmit = function(e) {
+    e.preventDefault();
+    const task = {
+      name: usTask.value,
+      date: usDate.value,
+      type: usType.value,
+      crew: usCrew.value,
+      notes: usNotes.value
+    };
+    utilitySchedules.push(task);
+    renderUtilityScheduleList();
+    this.reset();
+  };
+  renderUtilityScheduleList();
 }
 function renderUtilityScheduleList() {
-  // ... unchanged, omitted for space ...
+  document.getElementById('utilityScheduleList').innerHTML = utilitySchedules.map((task, idx) =>
+    `<li>
+      <b>${task.name}:</b> ${task.type} (${task.date})
+      <button onclick="deleteUtilitySchedule(${idx})">Delete</button>
+    </li>`
+  ).join('');
 }
 window.deleteUtilitySchedule = function(idx) {
   utilitySchedules.splice(idx, 1);
   renderUtilityScheduleList();
 };
 
-// Vault Tracker Logic - now displays imported Excel, manual, and built-in vaults
 function renderVaultTracker() {
   const vaults = getVaultData();
   const container = document.getElementById('vaultTracker');
@@ -224,4 +257,82 @@ function renderDashboardContent() {
   renderVaultTracker();
   showTab('damageReports');
 }
-// ... auth/navigation functions as previously ...
+
+// --- Auth/navigation logic (unchanged) ---
+async function registerUser(email, password, role) {
+  const { data, error } = await supabase.auth.signUp({
+    email, password, options: { data: { role } }
+  });
+  if (error) {
+    document.getElementById('registerError').textContent = error.message;
+    document.getElementById('registerError').style.display = "block";
+  }
+  else alert('Registration successful! Check your email for a confirmation link.');
+  return data;
+}
+async function loginUser(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email, password
+  });
+  if (error) {
+    document.getElementById('loginMsg').textContent = error.message;
+    document.getElementById('loginMsg').style.display = "block";
+    if (error.message && error.message.toLowerCase().includes("confirmed")) {
+      document.getElementById('resendConfirm').style.display = "block";
+    } else {
+      document.getElementById('resendConfirm').style.display = "none";
+    }
+    return null;
+  } else {
+    document.getElementById('loginMsg').style.display = "none";
+    document.getElementById('resendConfirm').style.display = "none";
+    showDashboard();
+  }
+  return data;
+}
+async function handleRegister(e) {
+  e.preventDefault();
+  var email = document.getElementById('registerEmail').value.trim();
+  document.getElementById('registerError').style.display = "none";
+  const password = document.getElementById('registerPassword').value;
+  const role = document.getElementById('registerRole').value;
+  await registerUser(email, password, role);
+  showLogin();
+}
+async function handleLogin(e) {
+  e.preventDefault();
+  var email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  await loginUser(email, password);
+}
+async function handleResendConfirm() {
+  const email = document.getElementById("loginEmail").value.trim();
+  if (!email) {
+    alert("Enter your email first.");
+    return;
+  }
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email
+  });
+  if (error) alert("Error resending. Contact admin.");
+  else alert("Confirmation email resent. Please check your inbox and spam!");
+}
+function showDashboard() {
+  document.getElementById('loginPage').style.display = "none";
+  document.getElementById('registerPage').style.display = "none";
+  document.getElementById('dashboard').style.display = "block";
+  renderDashboardContent();
+  setupTabListeners();
+}
+function logoutUser() {
+  supabase.auth.signOut()
+    .then(() => {
+      alert('Logged out!');
+      showLogin();
+    });
+}
+
+// Ensure all top-level handlers are on window (optional)
+//window.showLogin = showLogin;
+//window.showDashboard = showDashboard;
