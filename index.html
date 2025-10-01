@@ -16,7 +16,7 @@
   <div id="loginPage" class="page" style="display:block">
     <img src="logo.png" alt="Site Work Logo" class="logo">
     <h2>Login</h2>
-    <form id="loginForm" onsubmit="handleLogin(event)">
+    <form id="loginForm">
       <input type="email" id="loginEmail" placeholder="Email" required>
       <input type="password" id="loginPassword" placeholder="Password" required>
       <button type="submit">Login</button>
@@ -31,7 +31,7 @@
   <div id="registerPage" class="page" style="display:none">
     <img src="logo.png" alt="Site Work Logo" class="logo">
     <h2>Register</h2>
-    <form id="registerForm" onsubmit="handleRegister(event)">
+    <form id="registerForm">
       <input type="email" id="registerEmail" placeholder="Email" required>
       <input type="password" id="registerPassword" placeholder="Password" required>
       <select id="registerRole">
@@ -41,7 +41,7 @@
       <button type="submit">Register</button>
       <span id="registerError" style="display:none;color:#c90000"></span>
     </form>
-    <button onclick="showLogin()">Back to Login</button>
+    <button id="backToLogin">Back to Login</button>
   </div>
   <!-- DASHBOARD PAGE -->
   <div id="dashboard" class="page" style="display:none">
@@ -61,7 +61,7 @@
         </form>
       </div>
     </div>
-    <button onclick="logoutUser()">Logout</button>
+    <button id="logoutBtn">Logout</button>
   </div>
   <script type="module" src="app.js"></script>
 </body>

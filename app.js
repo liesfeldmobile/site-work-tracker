@@ -1,8 +1,5 @@
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
-const supabase = createClient(
-  'https://sawnurwzfmkdjpafunxa.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0'
-)
+const supabase = createClient('https://sawnurwzfmkdjpafunxa.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0');
 
 let manualVaults = [];
 let importedVaults = [];
@@ -14,6 +11,7 @@ function getVaultData() {
   ];
 }
 
+// Show/hide login/register/dashboard
 function showLogin() {
   document.getElementById('registerPage').style.display = "none";
   document.getElementById('dashboard').style.display = "none";
@@ -26,8 +24,15 @@ function showRegister() {
   document.getElementById('registerPage').style.display = "block";
   document.getElementById('registerError').style.display = "none";
 }
-window.showRegister = showRegister;
+function showDashboard() {
+  document.getElementById('loginPage').style.display = "none";
+  document.getElementById('registerPage').style.display = "none";
+  document.getElementById('dashboard').style.display = "block";
+  renderDashboardContent();
+  setupTabListeners();
+}
 
+// Navigation
 function setupTabListeners() {
   document.querySelectorAll('.tabBtn').forEach(btn => {
     btn.onclick = () => showTab(btn.dataset.tab);
@@ -38,9 +43,8 @@ function showTab(tabName) {
     section.style.display = 'none';
   document.getElementById(tabName).style.display = 'block';
 }
-window.showTab = showTab;
 
-// EXCEL UPLOAD HANDLER
+// Excel upload handler
 function handleExcelUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -149,7 +153,7 @@ window.deleteDamageReport = function(idx) {
   renderDamageReportList();
 };
 
-// Utility Schedules Logic 
+// Utility Schedules Logic
 let utilitySchedules = [];
 function renderUtilitySchedules() {
   const container = document.getElementById('utilitySchedules');
@@ -196,7 +200,7 @@ window.deleteUtilitySchedule = function(idx) {
 function renderVaultTracker() {
   const vaults = getVaultData();
   const container = document.getElementById('vaultTracker');
-  container.innerHTML = container.innerHTML + `
+  container.innerHTML = document.getElementById('excelUploadForm').outerHTML + `
     <h3>Vault Tracker</h3>
     <form id="vaultForm">
       <input placeholder="Campus" id="vCampus" required>
@@ -239,6 +243,7 @@ function renderVaultTracker() {
     renderVaultTracker();
     this.reset();
   };
+  document.getElementById('vaultExcelInput').addEventListener('change', handleExcelUpload);
 }
 window.updateVault = function(idx) {
   const vaults = getVaultData();
@@ -258,7 +263,7 @@ function renderDashboardContent() {
   showTab('damageReports');
 }
 
-// --- Auth/navigation logic (unchanged) ---
+// --- Auth/navigation logic ---
 async function registerUser(email, password, role) {
   const { data, error } = await supabase.auth.signUp({
     email, password, options: { data: { role } }
@@ -318,21 +323,10 @@ async function handleResendConfirm() {
   if (error) alert("Error resending. Contact admin.");
   else alert("Confirmation email resent. Please check your inbox and spam!");
 }
-function showDashboard() {
-  document.getElementById('loginPage').style.display = "none";
-  document.getElementById('registerPage').style.display = "none";
-  document.getElementById('dashboard').style.display = "block";
-  renderDashboardContent();
-  setupTabListeners();
-}
-function logoutUser() {
-  supabase.auth.signOut()
-    .then(() => {
-      alert('Logged out!');
-      showLogin();
-    });
-}
 
-// Ensure all top-level handlers are on window (optional)
-//window.showLogin = showLogin;
-//window.showDashboard = showDashboard;
+// --- All event handlers after all fns are declared! ---
+window.onload = function() {
+  document.getElementById('switchToRegister').onclick = showRegister;
+  document.getElementById('backToLogin').onclick = showLogin;
+  document.getElementById('loginForm').onsubmit = handleLogin;
+  document.getElementById('registerForm
