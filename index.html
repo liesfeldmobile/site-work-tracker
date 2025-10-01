@@ -2,70 +2,157 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Site Work Tracker</title>
+  <title>Vault Turnover Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Add styles as needed -->
+  <style>
+    body {
+      background: #181b1e;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+    }
+    header {
+      background: #232629;
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
+    }
+    header .logo {
+      height: 50px;
+      margin-right: 18px;
+    }
+    header .title {
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 1px;
+    }
+    .card {
+      background: #232629;
+      border-radius: 16px;
+      box-shadow: 0 2px 24px 8px #0004;
+      max-width: 540px;
+      margin: 60px auto;
+      padding: 48px 34px 44px 34px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 400px;
+    }
+    .card-logo {
+      width: 240px;
+      margin: 0 auto 36px auto;
+      display: block;
+    }
+    h2 {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin: 0 0 22px 0;
+      text-align: left;
+      width: 100%;
+      color: #fff;
+    }
+    .form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .input {
+      background: #262b2f;
+      color: #eee;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 13px 16px;
+      font-size: 1.1em;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .input:focus { border-color: #e62429; }
+    .btn {
+      background: #36393f;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.09em;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    .btn:hover { background: #e62429; color: #fff;}
+    .register-link {
+      color: #eee;
+      margin-top: 28px;
+      width: 100%;
+      text-align: left;
+      font-size: 1em;
+    }
+    .register-link button {
+      padding: 7px 18px;
+      border-radius: 8px;
+      background: #232629;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      font-size: 1em;
+      margin-left: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .register-link button:hover { background: #e62429;}
+    .error {
+      color: #e62429;
+      margin-top: 14px;
+      margin-bottom: 4px;
+      font-weight: bold;
+      width: 100%;
+      text-align: left;
+      display: block;
+    }
+    @media (max-width: 700px) {
+      .card { max-width: 98vw; padding: 30px 4vw;}
+      .card-logo { width: 140px;}
+      header { flex-direction: column; align-items: flex-start; padding: 0.75em 1em;}
+    }
+  </style>
 </head>
 <body>
-  <!-- Login Page -->
-  <div id="loginPage">
+  <header>
+    <img src="logo.png" class="logo" alt="Logo" onerror="this.style.display='none'">
+    <span class="title">Vault Turnover Tracker</span>
+  </header>
+  <div class="card" id="loginPage">
+    <img src="logo.png" class="card-logo" alt="Logo" onerror="this.style.display='none'">
     <h2>Login</h2>
-    <form id="loginForm">
-      <input id="loginEmail" type="email" placeholder="Email" required /><br>
-      <input id="loginPassword" type="password" placeholder="Password" required /><br>
-      <button type="submit">Login</button>
+    <form id="loginForm" class="form">
+      <input id="loginEmail" class="input" type="email" placeholder="Email" required />
+      <input id="loginPassword" class="input" type="password" placeholder="Password" required />
+      <button class="btn" type="submit">Login</button>
     </form>
-    <p id="loginMsg" style="display:none;color:red;"></p>
-    <button id="switchToRegister">Register</button>
-    <button id="resendConfirm" style="display:none;">Resend Confirmation Email</button>
-  </div>
-
-  <!-- Register Page -->
-  <div id="registerPage" style="display:none;">
-    <h2>Register</h2>
-    <form id="registerForm">
-      <input id="registerEmail" type="email" placeholder="Email" required /><br>
-      <input id="registerPassword" type="password" placeholder="Password" required /><br>
-      <select id="registerRole">
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
-      </select><br>
-      <button type="submit">Register</button>
-    </form>
-    <p id="registerError" style="display:none;color:red;"></p>
-    <button id="backToLogin">Back to Login</button>
-  </div>
-
-  <!-- Dashboard -->
-  <div id="dashboard" style="display:none;">
-    <h2>Vault Tracking Dashboard</h2>
-    <button id="logoutBtn">Logout</button>
-    <button id="addVaultBtn">Add Vault</button>
-    <input id="vaultExcelInput" type="file" accept=".xlsx,.xls" style="margin:15px 0;" />
-    <div id="vaultTableContainer"></div>
-  </div>
-
-  <!-- Vault Modal -->
-  <div id="vaultModal" style="display:none; position:fixed; left: 0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,.5); z-index:10;">
-    <div class="modal-content" style="background:white;padding:25px;max-width:400px;margin:50px auto;position:relative;">
-      <button id="modalCloseBtn" style="position:absolute;top:10px;right:10px;">X</button>
-      <h3 id="modalTitle">Add/Edit Vault Entry</h3>
-      <form id="vaultForm">
-        <input id="vCampus" placeholder="Campus" required /><br>
-        <input id="vBuilding" placeholder="Building" required /><br>
-        <input id="vVaultId" placeholder="Vault ID" required /><br>
-        <input id="vStatus" placeholder="Status" required /><br>
-        <input id="vTurnoverDate" placeholder="Turnover Date" type="date" /><br>
-        <input id="vAttachmentInput" type="file" accept="image/*,application/pdf" /><br>
-        <img id="vPhotoPreview" src="" style="display:none;max-width:100px;" /><br>
-        <button type="button" id="vCapturePhotoBtn">Capture Photo</button>
-        <button type="submit">Save</button>
-      </form>
+    <span id="loginMsg" class="error" style="display:none;"></span>
+    <div class="register-link">Need an account?
+      <button id="switchToRegister">Register</button>
     </div>
   </div>
 
-  <!-- Add SheetJS for Excel import -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <div class="card" id="registerPage" style="display:none;">
+    <img src="logo.png" class="card-logo" alt="Logo" onerror="this.style.display='none'">
+    <h2>Register</h2>
+    <form id="registerForm" class="form">
+      <input id="registerEmail" class="input" type="email" placeholder="Email" required />
+      <input id="registerPassword" class="input" type="password" placeholder="Password" required />
+      <select id="registerRole" class="input">
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button class="btn" type="submit">Register</button>
+    </form>
+    <span id="registerError" class="error" style="display:none"></span>
+    <div class="register-link"><button id="backToLogin">Back to Login</button></div>
+  </div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>
