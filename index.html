@@ -5,9 +5,12 @@
   <title>Liesfeld Site Work Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="styles.css">
+  <script src="vault_data.js"></script>
+  <script src="vault_part1.js"></script>
+  <script src="vault_part2.js"></script>
+  <script src="vault_ric2.js"></script>
 </head>
 <body>
-  <!-- LOGIN PAGE -->
   <div id="loginPage" class="page" style="display:block">
     <img src="logo.png" alt="Site Work Logo" class="logo">
     <h2>Login</h2>
@@ -22,8 +25,6 @@
     </p>
     <span id="loginMsg" style="color:#c90000; display:none"></span>
   </div>
-
-  <!-- REGISTER PAGE -->
   <div id="registerPage" class="page" style="display:none">
     <img src="logo.png" alt="Site Work Logo" class="logo">
     <h2>Register</h2>
@@ -39,15 +40,18 @@
     </form>
     <button onclick="showLogin()">Back to Login</button>
   </div>
-
-  <!-- DASHBOARD PAGE -->
   <div id="dashboard" class="page" style="display:none">
     <img src="logo.png" alt="Site Work Logo" class="logo">
     <h2>Dashboard</h2>
-    <div id="dashboardContent">
-      <div id="damageReports"></div>
-      <div id="utilitySchedules"></div>
-      <div id="vaultTracker"></div>
+    <nav>
+      <button onclick="showTab('damageReports')">Damage Reports</button>
+      <button onclick="showTab('utilitySchedules')">Utility Schedules</button>
+      <button onclick="showTab('vaultTracker')">Vault Tracker</button>
+    </nav>
+    <div id="tabContent">
+      <div id="damageReports" class="tabSection"></div>
+      <div id="utilitySchedules" class="tabSection" style="display:none"></div>
+      <div id="vaultTracker" class="tabSection" style="display:none"></div>
     </div>
     <button onclick="logoutUser()">Logout</button>
   </div>
