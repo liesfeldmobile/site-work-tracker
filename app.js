@@ -1,17 +1,14 @@
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
-
 const supabase = createClient(
   'https://sawnurwzfmkdjpafunxa.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0'
 );
-
 // Local application state
 let vaults = [];
 let editingVaultIdx = null; // For modal
 let capturedPhoto = null; // DataURL for captured photo
 
 // ---------- AUTH FLOW ----------
-
 // Show/hide correct UI sections
 function showLogin() {
   document.getElementById('loginPage').style.display = "block";
@@ -46,7 +43,6 @@ async function registerUser(email, password, role) {
     showLogin();
   }
 }
-
 async function loginUser(email, password) {
   const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
@@ -65,21 +61,17 @@ async function loginUser(email, password) {
   loadVaults();
   return data;
 }
-
 async function handleLogout() {
   await supabase.auth.signOut();
   showLogin();
 }
 
 // ---------- VAULT LOGIC ----------
-
-// Load vaults from Supabase database table "vaults"
 async function loadVaults() {
   const { data, error } = await supabase.from('vaults').select('*');
   vaults = data || [];
   renderVaultTable();
 }
-
 async function saveVaultToDB(vault) {
   // If editing, update; else, insert
   if (editingVaultIdx !== null && vaults[editingVaultIdx]?.id) {
@@ -114,11 +106,11 @@ function renderVaultTable() {
       <td>${v.status || ''}</td>
       <td>${v.turnoverDate || ''}</td>
       <td>${v.attachmentUrl ? `<a href="${v.attachmentUrl}" target="_blank">View</a>` : ''}
-          <input type="file" accept="image/*,application/pdf" style="display:none;" onchange="window.handleAttachFile(event,${idx})" />
-          <button onclick="this.previousElementSibling.click()">Attach File</button>
+        <input type="file" accept="image/*,application/pdf" style="display:none;" onchange="window.handleAttachFile(event,${idx})" />
+        <button onclick="this.previousElementSibling.click()">Attach File</button>
       </td>
       <td>${v.photoUrl ? `<img src="${v.photoUrl}" width="48" />` : ''}
-          <button onclick="window.editVault(${idx},true)">Take Photo</button>
+        <button onclick="window.editVault(${idx},true)">Take Photo</button>
       </td>
       <td><button onclick="window.editVault(${idx})">Edit</button></td>
     </tr>`
@@ -128,7 +120,6 @@ function renderVaultTable() {
 }
 
 // ---------- MODAL LOGIC ----------
-
 function showVaultModal(editIdx = null, photoCapture = false) {
   editingVaultIdx = editIdx;
   capturedPhoto = null;
@@ -147,7 +138,6 @@ function showVaultModal(editIdx = null, photoCapture = false) {
   document.getElementById('vAttachmentInput').value = '';
   if (photoCapture) openCameraCapture();
 }
-
 function closeVaultModal() {
   document.getElementById('vaultModal').style.display = "none";
   editingVaultIdx = null;
@@ -175,9 +165,7 @@ document.getElementById('vaultForm').onsubmit = async function(e) {
 document.getElementById('modalCloseBtn').onclick = closeVaultModal;
 
 // ---------- PHOTO CAPTURE ----------
-
 document.getElementById('vCapturePhotoBtn').onclick = openCameraCapture;
-
 function openCameraCapture() {
   // Simple photo capture with getUserMedia & canvas
   let modal = document.getElementById('vaultModal');
@@ -186,30 +174,29 @@ function openCameraCapture() {
   video.style.width = "100%";
   modal.querySelector('.modal-content').appendChild(video);
   navigator.mediaDevices.getUserMedia({ video:true })
-    .then(stream => {
-      video.srcObject = stream;
-      // Add photo button
-      let snapBtn = document.createElement('button');
-      snapBtn.textContent = "Capture Photo";
-      snapBtn.onclick = function() {
-        let canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-        capturedPhoto = canvas.toDataURL('image/png');
-        document.getElementById('vPhotoPreview').src = capturedPhoto;
-        document.getElementById('vPhotoPreview').style.display = "block";
-        // Stop video/camera
-        stream.getTracks().forEach(track => track.stop());
-        video.remove();
-        snapBtn.remove();
-      }
-      modal.querySelector('.modal-content').appendChild(snapBtn);
-    });
+  .then(stream => {
+    video.srcObject = stream;
+    // Add photo button
+    let snapBtn = document.createElement('button');
+    snapBtn.textContent = "Capture Photo";
+    snapBtn.onclick = function() {
+      let canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+      capturedPhoto = canvas.toDataURL('image/png');
+      document.getElementById('vPhotoPreview').src = capturedPhoto;
+      document.getElementById('vPhotoPreview').style.display = "block";
+      // Stop video/camera
+      stream.getTracks().forEach(track => track.stop());
+      video.remove();
+      snapBtn.remove();
+    }
+    modal.querySelector('.modal-content').appendChild(snapBtn);
+  });
 }
 
 // ---------- ATTACH FILE ----------
-
 window.handleAttachFile = async function(e, idx) {
   const file = e.target.files[0];
   if (!file) return;
@@ -221,19 +208,16 @@ window.handleAttachFile = async function(e, idx) {
 };
 
 // ---------- EDIT VAULT ----------
-
 window.editVault = function(idx, photo = false) {
   showVaultModal(idx, photo);
 };
 
 // ---------- ADD VAULT ----------
-
 document.getElementById('addVaultBtn').onclick = function() {
   showVaultModal(null, false);
 };
 
 // ---------- EXCEL IMPORT ----------
-
 document.getElementById('vaultExcelInput').onchange = function(e) {
   const file = e.target.files[0];
   if (!file) return;
@@ -264,11 +248,9 @@ document.getElementById('vaultExcelInput').onchange = function(e) {
 };
 
 // ---------- LOGOUT BUTTON ----------
-
 document.getElementById('logoutBtn').onclick = handleLogout;
 
 // ---------- REGISTER/BACK TO LOGIN BUTTONS ----------
-
 document.getElementById('switchToRegister').onclick = showRegister;
 document.getElementById('backToLogin').onclick = showLogin;
 

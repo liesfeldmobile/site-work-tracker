@@ -1,84 +1,71 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Liesfeld Site Work Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="styles.css" />
-  <!-- Excel parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Site Work Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Add styles as needed -->
 </head>
 <body>
-  <!-- NAVIGATION (optional enhancement) -->
-  <nav>
-    <img src="logo.png" alt="Site Work Logo" class="logo-nav" />
-    <span class="nav-title">Vault Turnover Tracker</span>
-  </nav>
-
-  <!-- LOGIN PAGE -->
-  <div id="loginPage" class="page" style="display:block;">
-    <img src="logo.png" alt="Site Work Logo" class="logo" />
+  <!-- Login Page -->
+  <div id="loginPage">
     <h2>Login</h2>
     <form id="loginForm">
-      <input type="email" id="loginEmail" placeholder="Email" required />
-      <input type="password" id="loginPassword" placeholder="Password" required />
+      <input id="loginEmail" type="email" placeholder="Email" required /><br>
+      <input id="loginPassword" type="password" placeholder="Password" required /><br>
       <button type="submit">Login</button>
-      <button type="button" id="resendConfirm" style="margin-top:8px; display:none;">Resend Confirmation Email</button>
     </form>
-    <p>Need an account? <button id="switchToRegister" type="button">Register</button></p>
-    <p><span id="loginMsg" style="color:#c90000;display:none;"></span></p>
+    <p id="loginMsg" style="display:none;color:red;"></p>
+    <button id="switchToRegister">Register</button>
+    <button id="resendConfirm" style="display:none;">Resend Confirmation Email</button>
   </div>
 
-  <!-- REGISTER PAGE -->
-  <div id="registerPage" class="page" style="display:none;">
-    <img src="logo.png" alt="Site Work Logo" class="logo" />
+  <!-- Register Page -->
+  <div id="registerPage" style="display:none;">
     <h2>Register</h2>
     <form id="registerForm">
-      <input type="email" id="registerEmail" placeholder="Email" required />
-      <input type="password" id="registerPassword" placeholder="Password" required />
-      <select id="registerRole" required>
-        <option value="">Select Role…</option>
+      <input id="registerEmail" type="email" placeholder="Email" required /><br>
+      <input id="registerPassword" type="password" placeholder="Password" required /><br>
+      <select id="registerRole">
         <option value="user">User</option>
         <option value="admin">Admin</option>
-      </select>
+      </select><br>
       <button type="submit">Register</button>
-      <button type="button" id="backToLogin">Back to Login</button>
     </form>
-    <p style="color:#c90000;"><span id="registerError" style="display:none;"></span></p>
+    <p id="registerError" style="display:none;color:red;"></p>
+    <button id="backToLogin">Back to Login</button>
   </div>
 
-  <!-- DASHBOARD -->
-  <div id="dashboard" class="page" style="display:none;">
-    <h2>Vault Tracker</h2>
-    <!-- Import and Add -->
-    <div class="action-bar">
-      <input type="file" id="vaultExcelInput" accept=".xlsx, .xls" />
-      <button id="addVaultBtn">Add New Vault Entry</button>
-      <button id="logoutBtn" style="float:right;">Logout</button>
-    </div>
-    <!-- Vault Table -->
+  <!-- Dashboard -->
+  <div id="dashboard" style="display:none;">
+    <h2>Vault Tracking Dashboard</h2>
+    <button id="logoutBtn">Logout</button>
+    <button id="addVaultBtn">Add Vault</button>
+    <input id="vaultExcelInput" type="file" accept=".xlsx,.xls" style="margin:15px 0;" />
     <div id="vaultTableContainer"></div>
   </div>
 
-  <!-- VAULT MODAL (ADD/EDIT) -->
-  <div id="vaultModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <span class="close" id="modalCloseBtn">&times;</span>
+  <!-- Vault Modal -->
+  <div id="vaultModal" style="display:none; position:fixed; left: 0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,.5); z-index:10;">
+    <div class="modal-content" style="background:white;padding:25px;max-width:400px;margin:50px auto;position:relative;">
+      <button id="modalCloseBtn" style="position:absolute;top:10px;right:10px;">X</button>
       <h3 id="modalTitle">Add/Edit Vault Entry</h3>
       <form id="vaultForm">
-        <input type="text" id="vCampus" placeholder="Campus" required />
-        <input type="text" id="vBuilding" placeholder="Building" required />
-        <input type="text" id="vVaultId" placeholder="Vault ID" required />
-        <input type="text" id="vStatus" placeholder="Status" required />
-        <input type="date" id="vTurnoverDate" placeholder="Turnover Date" required />
-        <input type="file" id="vAttachmentInput" accept="image/*,application/pdf" capture="environment" />
-        <button type="button" id="vCapturePhotoBtn">Take Photo</button>
-        <img id="vPhotoPreview" src="" alt="Photo Preview" style="display:none;max-width:100px;margin:10px 0 0 0;" />
-        <button type="submit" id="vaultSaveBtn">Save</button>
+        <input id="vCampus" placeholder="Campus" required /><br>
+        <input id="vBuilding" placeholder="Building" required /><br>
+        <input id="vVaultId" placeholder="Vault ID" required /><br>
+        <input id="vStatus" placeholder="Status" required /><br>
+        <input id="vTurnoverDate" placeholder="Turnover Date" type="date" /><br>
+        <input id="vAttachmentInput" type="file" accept="image/*,application/pdf" /><br>
+        <img id="vPhotoPreview" src="" style="display:none;max-width:100px;" /><br>
+        <button type="button" id="vCapturePhotoBtn">Capture Photo</button>
+        <button type="submit">Save</button>
       </form>
     </div>
   </div>
 
-  <script src="app.js"></script>
+  <!-- Add SheetJS for Excel import -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script type="module" src="app.js"></script>
 </body>
 </html>
