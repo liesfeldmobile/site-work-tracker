@@ -15,7 +15,7 @@
       <input type="email" id="loginEmail" placeholder="Email" required>
       <input type="password" id="loginPassword" placeholder="Password" required>
       <button type="submit">Login</button>
-      <button type="button" id="resendConfirm" style="margin-top:8px">Resend Confirmation Email</button>
+      <button type="button" id="resendConfirm" style="margin-top:8px; display:none;">Resend Confirmation Email</button>
     </form>
     <p>Need an account?
       <button id="switchToRegister" type="button">Register</button>
@@ -39,5 +39,21 @@
     </form>
     <button onclick="showLogin()">Back to Login</button>
   </div>
+
+  <!-- DASHBOARD PAGE -->
+  <div id="dashboard" class="page" style="display:none">
+    <img src="logo.png" alt="Site Work Logo" class="logo">
+    <h2>Dashboard</h2>
+    <div id="dashboardContent">
+      <!-- Damage report logic -->
+      <div id="damageReports"></div>
+      <!-- Utility schedules -->
+      <div id="utilitySchedules"></div>
+      <!-- Vault tracker -->
+      <div id="vaultTracker"></div>
+    </div>
+    <button onclick="logoutUser()">Logout</button>
+  </div>
+  <script src="app-1.js"></script>
 </body>
 </html>

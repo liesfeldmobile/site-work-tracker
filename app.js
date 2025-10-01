@@ -9,121 +9,110 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Fisher Price event bindings — always waits for full load!
 window.onload = function() {
+  document.getElementById('switchToRegister').onclick = showRegister;
+  document.getElementById('loginForm').onsubmit = handleLogin;
+  document.getElementById('registerForm').onsubmit = handleRegister;
+  document.getElementById('resendConfirm').onclick = handleResendConfirm;
+  showLogin();
+};
 
-    document.getElementById('switchToRegister').onclick = showRegister;
-    document.getElementById('switchToLogin').onclick = showLogin;
-    document.getElementById('resendConfirm').onclick = handleResendConfirm;
-    document.getElementById('loginForm').onsubmit = handleLogin;
-    document.getElementById('registerForm').onsubmit = handleRegister;
+function showLogin() {
+  document.getElementById('registerPage').style.display = "none";
+  document.getElementById('dashboard').style.display = "none";
+  document.getElementById('loginPage').style.display = "block";
+  document.getElementById('loginMsg').style.display = "none";
+  document.getElementById('resendConfirm').style.display = "none";
+}
 
-    // ========================= PAGE SWAP LOGIC =========================
+function showRegister() {
+  document.getElementById('loginPage').style.display = "none";
+  document.getElementById('registerPage').style.display = "block";
+  document.getElementById('registerError').style.display = "none";
+}
 
-    function showLogin() {
-        document.getElementById('registerPage').style.display = "none";
-        document.getElementById('loginPage').style.display = "block";
-        document.getElementById('loginMsg').style.display = "none";
+async function registerUser(email, password, role) {
+  const { data, error } = await supabase.auth.signUp({
+    email, password, options: { data: { role } }
+  });
+  if (error) {
+    document.getElementById('registerError').textContent = error.message;
+    document.getElementById('registerError').style.display = "block";
+  }
+  else alert('Registration successful! Check your email for a confirmation link.');
+  return data;
+}
+
+async function loginUser(email, password) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email, password
+  });
+  if (error) {
+    document.getElementById('loginMsg').textContent = error.message;
+    document.getElementById('loginMsg').style.display = "block";
+    if (error.message && error.message.toLowerCase().includes("confirmed")) {
+      document.getElementById('resendConfirm').style.display = "block";
+    } else {
+      document.getElementById('resendConfirm').style.display = "none";
     }
+    return null;
+  } else {
+    document.getElementById('loginMsg').style.display = "none";
+    document.getElementById('resendConfirm').style.display = "none";
+    showDashboard();
+  }
+  return data;
+}
 
-    function showRegister() {
-        document.getElementById('loginPage').style.display = "none";
-        document.getElementById('registerPage').style.display = "block";
-    }
+async function handleRegister(e) {
+  e.preventDefault();
+  var email = document.getElementById('registerEmail').value.trim();
+  document.getElementById('registerError').style.display = "none";
+  const password = document.getElementById('registerPassword').value;
+  const role = document.getElementById('registerRole').value;
+  await registerUser(email, password, role);
+  showLogin();
+}
 
-    // ========================= AUTHENTICATION =========================
+async function handleLogin(e) {
+  e.preventDefault();
+  var email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  await loginUser(email, password);
+}
 
-    async function registerUser(email, password, role) {
-        const { data, error } = await supabase.auth.signUp({
-            email, password, options: { data: { role } }
-        });
-        if (error) alert(error.message);
-        else alert('Registration successful! Check your email for a confirmation link.');
-        return data;
-    }
+async function handleResendConfirm() {
+  const email = document.getElementById("loginEmail").value.trim();
+  if (!email) {
+    alert("Enter your email first.");
+    return;
+  }
+  const { error } = await supabase.auth.resend({
+    type: "signup",
+    email
+  });
+  if (error) alert("Error resending. Contact admin.");
+  else alert("Confirmation email resent. Please check your inbox and spam!");
+}
 
-    async function loginUser(email, password) {
-        const { data, error } = await supabase.auth.signInWithPassword({
-            email, password
-        });
-        if (error) alert(error.message);
-        else showDashboard();
-        return data;
-    }
+function showDashboard() {
+  document.getElementById('loginPage').style.display = "none";
+  document.getElementById('registerPage').style.display = "none";
+  document.getElementById('dashboard').style.display = "block";
+  renderDashboardContent();
+}
 
-    async function getCurrentUser() {
-        const { data, error } = await supabase.auth.getUser();
-        if (error) return null;
-        return data.user;
-    }
+function logoutUser() {
+  supabase.auth.signOut()
+    .then(() => {
+      alert('Logged out!');
+      showLogin();
+    });
+}
 
-    async function logoutUser() {
-        await supabase.auth.signOut();
-        alert('Logged out!');
-        showLogin();
-    }
-
-    // ============= REGISTRATION FORM SUBMIT =============
-    async function handleRegister(e) {
-        e.preventDefault();
-        var email = document.getElementById('registerEmail').value.trim();
-
-        // The following restriction is disabled for development:
-        // if (!email.match(/^[a-zA-Z0-9._%+-]+@liesfeld.com$/)) {
-        //     document.getElementById('registerError').textContent = "Registration is restricted to @liesfeld.com emails.";
-        //     document.getElementById('registerError').style.display = "block";
-        //     return false;
-        // }
-        document.getElementById('registerError').style.display = "none";
-
-        const password = document.getElementById('registerPassword').value;
-        const role = document.getElementById('registerRole').value;
-        await registerUser(email, password, role);
-        showLogin();
-    }
-
-    // ============= LOGIN FORM SUBMIT =============
-    async function handleLogin(e) {
-        e.preventDefault();
-        var email = document.getElementById('loginEmail').value.trim();
-
-        // The following restriction is disabled for development:
-        // if (!email.match(/^[a-zA-Z0-9._%+-]+@liesfeld.com$/)) {
-        //     document.getElementById('loginMsg').textContent = "Login is restricted to @liesfeld.com emails.";
-        //     document.getElementById('loginMsg').style.display = "block";
-        //     return false;
-        // }
-        document.getElementById('loginMsg').style.display = "none";
-
-        const password = document.getElementById('loginPassword').value;
-        await loginUser(email, password);
-    }
-
-    // ============= RESEND CONFIRMATION EMAIL BUTTON =============
-    async function handleResendConfirm() {
-        const email = document.getElementById("loginEmail").value.trim();
-
-        // You may want to leave this restriction ACTIVE or disable for all emails:
-        if (email.match(/^[a-zA-Z0-9._%+-]+@liesfeld.com$/)) {
-            const { error } = await supabase.auth.resend({
-                type: "signup",
-                email
-            });
-            if (error) alert("Error resending. Contact admin.");
-            else alert("Confirmation email resent. Please check your inbox and spam!");
-        } else {
-            alert("Please enter your @liesfeld.com email in the email field before clicking resend.");
-        }
-    }
-
-    // ========================= DASHBOARD =========================
-    // Call dashboard navigation functions as before; add your data render functions here...
-    function showDashboard() {
-        document.getElementById('loginPage').style.display = "none";
-        document.getElementById('registerPage').style.display = "none";
-        document.getElementById('dashboard').style.display = "block";
-    }
-
-    // Your fetch/add/report/render functions for data remain below (damage reports, schedules, vaults)
-    // ... (etc) ...
+function renderDashboardContent() {
+  document.getElementById('damageReports').innerHTML = "<h3>Damage Reports</h3><p>No data yet.</p>";
+  document.getElementById('utilitySchedules').innerHTML = "<h3>Utility Schedules</h3><p>No data yet.</p>";
+  document.getElementById('vaultTracker').innerHTML = "<h3>Vault Tracker</h3><p>No data yet.</p>";
+  // Here is where you would load actual data from Supabase and populate these sections
 }
