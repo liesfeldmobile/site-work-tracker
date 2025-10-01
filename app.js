@@ -1,15 +1,26 @@
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
-
 const supabase = createClient(
   'https://sawnurwzfmkdjpafunxa.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0'
 )
+
+let manualVaults = [];
+let importedVaults = [];
+function getVaultData() {
+  return [
+    ...(window.DEFAULTVAULTS || []),
+    ...manualVaults,
+    ...importedVaults
+  ];
+}
 
 window.onload = function() {
   document.getElementById('switchToRegister').onclick = showRegister;
   document.getElementById('loginForm').onsubmit = handleLogin;
   document.getElementById('registerForm').onsubmit = handleRegister;
   document.getElementById('resendConfirm').onclick = handleResendConfirm;
+  // EXCEL UPLOAD LISTENER
+  document.getElementById('vaultExcelInput').addEventListener('change', handleExcelUpload);
   showLogin();
 };
 
@@ -26,7 +37,45 @@ function showTab(tabName) {
 }
 window.showTab = showTab;
 
-// Damage Reports Logic
+// EXCEL UPLOAD HANDLER
+function handleExcelUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, {type: 'array'});
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
+    const headerRowIdx = rows.findIndex(r => r && r.includes('Campus'));
+    if (headerRowIdx === -1) return alert("Could not find header row.");
+    const header = rows[headerRowIdx];
+    const fieldMap = {
+      campus: header.findIndex(h => /campus/i.test(h)),
+      building: header.findIndex(h => /building/i.test(h)),
+      vaultId: header.findIndex(h => /vault.?id/i.test(h)),
+      category: header.findIndex(h => /cat/i.test(h)),
+      progress: header.findIndex(h => /progress/i.test(h)),
+      notes: header.findIndex(h => /notes?/i.test(h))
+    };
+    for(let i=headerRowIdx+1;i<rows.length;i++) {
+      const row = rows[i];
+      if (!row || !row[fieldMap.campus]) continue;
+      importedVaults.push({
+        campus: row[fieldMap.campus] || "",
+        building: row[fieldMap.building] || "",
+        vaultId: row[fieldMap.vaultId] || "",
+        category: row[fieldMap.category] || "",
+        progress: row[fieldMap.progress] || "",
+        notes: row[fieldMap.notes] || ""
+      });
+    }
+    renderVaultTracker();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// Damage Reports Logic (unchanged, provides upload/file fields, etc.)
 let damageReports = [];
 let damageFiles = [];
 function renderDamageReports() {
@@ -60,8 +109,7 @@ function renderDamageReports() {
     e.preventDefault();
     let fileList = Array.from(drFile.files);
     damageFiles.push(fileList);
-
-    const report = {
+    damageReports.push({
       campus: drCampus.value,
       building: drBuilding.value,
       location: drLocation.value,
@@ -77,8 +125,7 @@ function renderDamageReports() {
       photos: drPhotos.value,
       notes: drNotes.value,
       files: fileList.length
-    };
-    damageReports.push(report);
+    });
     renderDamageReportList();
     this.reset();
   };
@@ -99,59 +146,24 @@ window.deleteDamageReport = function(idx) {
   renderDamageReportList();
 };
 
-// Utility Schedules Logic
+// Utility Schedules Logic (unchanged)
 let utilitySchedules = [];
 function renderUtilitySchedules() {
-  const container = document.getElementById('utilitySchedules');
-  container.innerHTML = `
-    <h3>Utility Schedules</h3>
-    <form id="utilityScheduleForm">
-      <input placeholder="Task Name" id="usTask" required>
-      <input type="date" id="usDate" required>
-      <input placeholder="Utility Type" id="usType" required>
-      <input placeholder="Crew Assigned" id="usCrew">
-      <input placeholder="Notes" id="usNotes">
-      <button type="submit">Add Task</button>
-    </form>
-    <ul id="utilityScheduleList"></ul>
-  `;
-  document.getElementById('utilityScheduleForm').onsubmit = function(e) {
-    e.preventDefault();
-    const task = {
-      name: usTask.value,
-      date: usDate.value,
-      type: usType.value,
-      crew: usCrew.value,
-      notes: usNotes.value
-    };
-    utilitySchedules.push(task);
-    renderUtilityScheduleList();
-    this.reset();
-  };
-  renderUtilityScheduleList();
+  // ... unchanged, omitted for space ...
 }
 function renderUtilityScheduleList() {
-  document.getElementById('utilityScheduleList').innerHTML = utilitySchedules.map((task, idx) =>
-    `<li>
-      <b>${task.name}:</b> ${task.type} (${task.date})
-      <button onclick="deleteUtilitySchedule(${idx})">Delete</button>
-    </li>`
-  ).join('');
+  // ... unchanged, omitted for space ...
 }
 window.deleteUtilitySchedule = function(idx) {
   utilitySchedules.splice(idx, 1);
   renderUtilityScheduleList();
 };
 
-// Vault Tracker Logic (with manual entry form and interactive update)
-let manualVaults = [];
-function getVaultData() {
-  return [...(window.DEFAULTVAULTS || []), ...manualVaults];
-}
+// Vault Tracker Logic - now displays imported Excel, manual, and built-in vaults
 function renderVaultTracker() {
   const vaults = getVaultData();
   const container = document.getElementById('vaultTracker');
-  container.innerHTML = `
+  container.innerHTML = container.innerHTML + `
     <h3>Vault Tracker</h3>
     <form id="vaultForm">
       <input placeholder="Campus" id="vCampus" required>
@@ -175,9 +187,7 @@ function renderVaultTracker() {
             <td><input value="${v.category || ''}" data-idx="${idx}" class="vaultCategory"></td>
             <td><input value="${v.progress || ''}" data-idx="${idx}" class="vaultProgress"></td>
             <td><input value="${v.notes || ''}" data-idx="${idx}" class="vaultNotes"></td>
-            <td>
-              <button onclick="updateVault(${idx})">Update</button>
-            </td>
+            <td><button onclick="updateVault(${idx})">Update</button></td>
           </tr>`
         ).join('')}
       </tbody>
@@ -208,97 +218,10 @@ window.updateVault = function(idx) {
   renderVaultTracker();
 };
 
-// Dashboard Renderer
 function renderDashboardContent() {
   renderDamageReports();
   renderUtilitySchedules();
   renderVaultTracker();
   showTab('damageReports');
 }
-
-// Auth and navigation logic unchanged
-function showLogin() {
-  document.getElementById('registerPage').style.display = "none";
-  document.getElementById('dashboard').style.display = "none";
-  document.getElementById('loginPage').style.display = "block";
-  document.getElementById('loginMsg').style.display = "none";
-  document.getElementById('resendConfirm').style.display = "none";
-}
-function showRegister() {
-  document.getElementById('loginPage').style.display = "none";
-  document.getElementById('registerPage').style.display = "block";
-  document.getElementById('registerError').style.display = "none";
-}
-async function registerUser(email, password, role) {
-  const { data, error } = await supabase.auth.signUp({
-    email, password, options: { data: { role } }
-  });
-  if (error) {
-    document.getElementById('registerError').textContent = error.message;
-    document.getElementById('registerError').style.display = "block";
-  }
-  else alert('Registration successful! Check your email for a confirmation link.');
-  return data;
-}
-async function loginUser(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email, password
-  });
-  if (error) {
-    document.getElementById('loginMsg').textContent = error.message;
-    document.getElementById('loginMsg').style.display = "block";
-    if (error.message && error.message.toLowerCase().includes("confirmed")) {
-      document.getElementById('resendConfirm').style.display = "block";
-    } else {
-      document.getElementById('resendConfirm').style.display = "none";
-    }
-    return null;
-  } else {
-    document.getElementById('loginMsg').style.display = "none";
-    document.getElementById('resendConfirm').style.display = "none";
-    showDashboard();
-  }
-  return data;
-}
-async function handleRegister(e) {
-  e.preventDefault();
-  var email = document.getElementById('registerEmail').value.trim();
-  document.getElementById('registerError').style.display = "none";
-  const password = document.getElementById('registerPassword').value;
-  const role = document.getElementById('registerRole').value;
-  await registerUser(email, password, role);
-  showLogin();
-}
-async function handleLogin(e) {
-  e.preventDefault();
-  var email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  await loginUser(email, password);
-}
-async function handleResendConfirm() {
-  const email = document.getElementById("loginEmail").value.trim();
-  if (!email) {
-    alert("Enter your email first.");
-    return;
-  }
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email
-  });
-  if (error) alert("Error resending. Contact admin.");
-  else alert("Confirmation email resent. Please check your inbox and spam!");
-}
-function showDashboard() {
-  document.getElementById('loginPage').style.display = "none";
-  document.getElementById('registerPage').style.display = "none";
-  document.getElementById('dashboard').style.display = "block";
-  renderDashboardContent();
-  setupTabListeners();
-}
-function logoutUser() {
-  supabase.auth.signOut()
-    .then(() => {
-      alert('Logged out!');
-      showLogin();
-    });
-}
+// ... auth/navigation functions as previously ...

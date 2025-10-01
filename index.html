@@ -9,6 +9,7 @@
   <script src="vault_part1.js"></script>
   <script src="vault_part2.js"></script>
   <script src="vault_ric2.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
   <!-- LOGIN PAGE -->
@@ -54,7 +55,11 @@
     <div id="tabContent">
       <div id="damageReports" class="tabSection"></div>
       <div id="utilitySchedules" class="tabSection" style="display:none"></div>
-      <div id="vaultTracker" class="tabSection" style="display:none"></div>
+      <div id="vaultTracker" class="tabSection" style="display:none">
+        <form id="excelUploadForm">
+          <label>Import Excel (vaults): <input type="file" id="vaultExcelInput" accept=".xls,.xlsx"></label>
+        </form>
+      </div>
     </div>
     <button onclick="logoutUser()">Logout</button>
   </div>
