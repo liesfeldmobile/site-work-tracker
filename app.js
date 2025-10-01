@@ -5,7 +5,6 @@ const supabase = createClient(
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0'
 )
 
-// Basic auth logic (unchanged)
 window.onload = function() {
   document.getElementById('switchToRegister').onclick = showRegister;
   document.getElementById('loginForm').onsubmit = handleLogin;
@@ -14,14 +13,20 @@ window.onload = function() {
   showLogin();
 };
 
-// Tabs and dashboard navigation
+function setupTabListeners() {
+  document.querySelectorAll('.tabBtn').forEach(btn => {
+    btn.onclick = () => showTab(btn.dataset.tab);
+  });
+}
+
 function showTab(tabName) {
-  for (const section of document.querySelectorAll('.tabSection')) 
+  for (const section of document.querySelectorAll('.tabSection'))
     section.style.display = 'none';
   document.getElementById(tabName).style.display = 'block';
 }
+window.showTab = showTab;
 
-// --- Damage Reports Logic ---
+// Damage Reports Logic
 let damageReports = [];
 function renderDamageReports() {
   const container = document.getElementById('damageReports');
@@ -86,7 +91,7 @@ window.deleteDamageReport = function(idx) {
   renderDamageReportList();
 };
 
-// --- Utility Schedules Logic ---
+// Utility Schedules Logic
 let utilitySchedules = [];
 function renderUtilitySchedules() {
   const container = document.getElementById('utilitySchedules');
@@ -130,7 +135,7 @@ window.deleteUtilitySchedule = function(idx) {
   renderUtilityScheduleList();
 };
 
-// --- Vault Tracker Logic ---
+// Vault Tracker Logic
 function getVaultData() {
   return window.DEFAULTVAULTS || [];
 }
@@ -171,15 +176,14 @@ window.updateVault = function(idx) {
   vaults[idx].notes = document.querySelector(`.vaultNotes[data-idx="${idx}"]`).value;
   renderVaultTracker();
 };
-// --- Dashboard Renderer ---
+
+// Dashboard Renderer
 function renderDashboardContent() {
   renderDamageReports();
   renderUtilitySchedules();
   renderVaultTracker();
   showTab('damageReports');
 }
-
-// -- Auth, Navigation, Error logic unchanged from previous posts --
 
 function showLogin() {
   document.getElementById('registerPage').style.display = "none";
@@ -257,6 +261,7 @@ function showDashboard() {
   document.getElementById('registerPage').style.display = "none";
   document.getElementById('dashboard').style.display = "block";
   renderDashboardContent();
+  setupTabListeners();
 }
 function logoutUser() {
   supabase.auth.signOut()
