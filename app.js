@@ -1,286 +1,37 @@
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
+
 const supabase = createClient(
   'https://sawnurwzfmkdjpafunxa.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0'
 );
 
-// Data containers
-let manualVaults = [];
-let importedVaults = [];
-function getVaultData() {
-  return [
-    ...(window.DEFAULTVAULTS || []),
-    ...manualVaults,
-    ...importedVaults
-  ];
-}
+// Local application state
+let vaults = [];
+let editingVaultIdx = null; // For modal
+let capturedPhoto = null; // DataURL for captured photo
 
-// Show/hide login/register/dashboard
+// ---------- AUTH FLOW ----------
+
+// Show/hide correct UI sections
 function showLogin() {
+  document.getElementById('loginPage').style.display = "block";
   document.getElementById('registerPage').style.display = "none";
   document.getElementById('dashboard').style.display = "none";
-  document.getElementById('loginPage').style.display = "block";
-  document.getElementById('loginMsg').style.display = "none";
-  document.getElementById('resendConfirm').style.display = "none";
 }
 function showRegister() {
   document.getElementById('loginPage').style.display = "none";
   document.getElementById('registerPage').style.display = "block";
+  document.getElementById('dashboard').style.display = "none";
   document.getElementById('registerError').style.display = "none";
 }
 function showDashboard() {
   document.getElementById('loginPage').style.display = "none";
   document.getElementById('registerPage').style.display = "none";
   document.getElementById('dashboard').style.display = "block";
-  renderDashboardContent();
-  setupTabListeners();
+  renderVaultTable();
 }
 
-// Navigation tabs
-function setupTabListeners() {
-  document.querySelectorAll('.tabBtn').forEach(btn => {
-    btn.onclick = () => showTab(btn.dataset.tab);
-  });
-}
-function showTab(tabName) {
-  for (const section of document.querySelectorAll('.tabSection'))
-    section.style.display = 'none';
-  document.getElementById(tabName).style.display = 'block';
-}
-
-// Excel upload handler
-function handleExcelUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    const data = new Uint8Array(e.target.result);
-    const workbook = XLSX.read(data, {type: 'array'});
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, {header:1});
-    const headerRowIdx = rows.findIndex(r => r && r.includes('Campus'));
-    if (headerRowIdx === -1) return alert("Could not find header row.");
-    const header = rows[headerRowIdx];
-    const fieldMap = {
-      campus: header.findIndex(h => /campus/i.test(h)),
-      building: header.findIndex(h => /building/i.test(h)),
-      vaultId: header.findIndex(h => /vault.?id/i.test(h)),
-      category: header.findIndex(h => /cat/i.test(h)),
-      progress: header.findIndex(h => /progress/i.test(h)),
-      notes: header.findIndex(h => /notes?/i.test(h))
-    };
-    for(let i = headerRowIdx + 1; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || !row[fieldMap.campus]) continue;
-      importedVaults.push({
-        campus: row[fieldMap.campus] || "",
-        building: row[fieldMap.building] || "",
-        vaultId: row[fieldMap.vaultId] || "",
-        category: row[fieldMap.category] || "",
-        progress: row[fieldMap.progress] || "",
-        notes: row[fieldMap.notes] || ""
-      });
-    }
-    renderVaultTracker();
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-// Damage Reports Logic
-let damageReports = [];
-let damageFiles = [];
-function renderDamageReports() {
-  const container = document.getElementById('damageReports');
-  container.innerHTML = `
-    <h3>Damage Reports</h3>
-    <form id="damageReportForm" enctype="multipart/form-data">
-      <input placeholder="Campus" id="drCampus" required>
-      <input placeholder="Building" id="drBuilding" required>
-      <input placeholder="Location" id="drLocation" required>
-      <input type="date" id="drDate" required>
-      <input placeholder="Reported By" id="drReportedBy" required>
-      <input placeholder="Type of Damage" id="drType" required>
-      <input placeholder="Description of Damage" id="drDescription" required>
-      <input type="date" id="drRepairDate">
-      <input placeholder="Repair Time (hrs)" id="drRepairTime">
-      <input placeholder="Repair Equipment" id="drEquipment">
-      <input placeholder="Crew Assigned" id="drCrew">
-      <input placeholder="Completion Verified By" id="drVerifiedBy">
-      <select id="drPhotos">
-        <option value="Y">Photos: Yes</option>
-        <option value="N">Photos: No</option>
-      </select>
-      <textarea id="drNotes" placeholder="Notes / Follow-up"></textarea>
-      Attach File(s): <input type="file" id="drFile" accept="image/*,video/*,.pdf,.doc,.docx" multiple>
-      <button type="submit">Add Report</button>
-    </form>
-    <div id="damageReportList"></div>
-  `;
-  document.getElementById('damageReportForm').onsubmit = function(e) {
-    e.preventDefault();
-    let fileList = Array.from(drFile.files);
-    damageFiles.push(fileList);
-    damageReports.push({
-      campus: drCampus.value,
-      building: drBuilding.value,
-      location: drLocation.value,
-      date: drDate.value,
-      reportedBy: drReportedBy.value,
-      type: drType.value,
-      description: drDescription.value,
-      repairDate: drRepairDate.value,
-      repairTime: drRepairTime.value,
-      equipment: drEquipment.value,
-      crew: drCrew.value,
-      verifiedBy: drVerifiedBy.value,
-      photos: drPhotos.value,
-      notes: drNotes.value,
-      files: fileList.length
-    });
-    renderDamageReportList();
-    this.reset();
-  };
-  renderDamageReportList();
-}
-function renderDamageReportList() {
-  document.getElementById('damageReportList').innerHTML = damageReports.map((r, idx) =>
-    `<div>
-      <strong>${r.campus} ${r.building}:</strong> ${r.type} - ${r.description}
-      ${r.files ? `<em>${r.files} file(s) attached</em>` : ""}
-      <button onclick="deleteDamageReport(${idx})">Delete</button>
-    </div>`
-  ).join('');
-}
-window.deleteDamageReport = function(idx) {
-  damageReports.splice(idx, 1);
-  damageFiles.splice(idx, 1);
-  renderDamageReportList();
-};
-
-// Utility Schedules Logic
-let utilitySchedules = [];
-function renderUtilitySchedules() {
-  const container = document.getElementById('utilitySchedules');
-  container.innerHTML = `
-    <h3>Utility Schedules</h3>
-    <form id="utilityScheduleForm">
-      <input placeholder="Task Name" id="usTask" required>
-      <input type="date" id="usDate" required>
-      <input placeholder="Utility Type" id="usType" required>
-      <input placeholder="Crew Assigned" id="usCrew">
-      <input placeholder="Notes" id="usNotes">
-      <button type="submit">Add Task</button>
-    </form>
-    <div id="utilityScheduleList"></div>
-  `;
-  document.getElementById('utilityScheduleForm').onsubmit = function(e) {
-    e.preventDefault();
-    const task = {
-      name: usTask.value,
-      date: usDate.value,
-      type: usType.value,
-      crew: usCrew.value,
-      notes: usNotes.value
-    };
-    utilitySchedules.push(task);
-    renderUtilityScheduleList();
-    this.reset();
-  };
-  renderUtilityScheduleList();
-}
-function renderUtilityScheduleList() {
-  document.getElementById('utilityScheduleList').innerHTML = utilitySchedules.map((task, idx) =>
-    `<div>
-      <strong>${task.name}:</strong> ${task.type} (${task.date})
-      <button onclick="deleteUtilitySchedule(${idx})">Delete</button>
-    </div>`
-  ).join('');
-}
-window.deleteUtilitySchedule = function(idx) {
-  utilitySchedules.splice(idx, 1);
-  renderUtilityScheduleList();
-};
-
-function renderVaultTracker() {
-  const vaults = getVaultData();
-  const container = document.getElementById('vaultTracker');
-  container.innerHTML = `
-    <form id="vaultForm">
-      <input placeholder="Campus" id="vCampus" required>
-      <input placeholder="Building" id="vBuilding" required>
-      <input placeholder="Vault ID" id="vVaultId" required>
-      <input placeholder="Category" id="vCategory">
-      <input placeholder="Progress" id="vProgress">
-      <input placeholder="Notes" id="vNotes">
-      <button type="submit">Add Vault Entry</button>
-    </form>
-    <input type="file" id="vaultExcelInput">
-    <div id="vaultListContainer"></div>
-  `;
-  document.getElementById('vaultForm').onsubmit = function(e) {
-    e.preventDefault();
-    manualVaults.push({
-      campus: vCampus.value,
-      building: vBuilding.value,
-      vaultId: vVaultId.value,
-      category: vCategory.value,
-      progress: vProgress.value,
-      notes: vNotes.value
-    });
-    renderVaultTracker();
-    this.reset();
-  };
-  document.getElementById('vaultExcelInput').addEventListener('change', handleExcelUpload);
-
-  document.getElementById('vaultListContainer').innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>Campus</th>
-          <th>Building</th>
-          <th>Vault ID</th>
-          <th>Category</th>
-          <th>Progress</th>
-          <th>Notes</th>
-          <th>Update</th>
-        </tr>
-      </thead>
-      <tbody>
-        ${vaults.map((v, idx) => `
-          <tr>
-            <td><input value="${v.campus}" data-idx="${idx}" class="vaultCampus"></td>
-            <td><input value="${v.building}" data-idx="${idx}" class="vaultBuilding"></td>
-            <td><input value="${v.vaultId}" data-idx="${idx}" class="vaultId"></td>
-            <td><input value="${v.category || ''}" data-idx="${idx}" class="vaultCategory"></td>
-            <td><input value="${v.progress || ''}" data-idx="${idx}" class="vaultProgress"></td>
-            <td><input value="${v.notes || ''}" data-idx="${idx}" class="vaultNotes"></td>
-            <td><button onclick="updateVault(${idx})">Update</button></td>
-          </tr>
-        `).join('')}
-      </tbody>
-    </table>
-  `;
-}
-window.updateVault = function(idx) {
-  const vaults = getVaultData();
-  vaults[idx].campus = document.querySelector(`.vaultCampus[data-idx="${idx}"]`).value;
-  vaults[idx].building = document.querySelector(`.vaultBuilding[data-idx="${idx}"]`).value;
-  vaults[idx].vaultId = document.querySelector(`.vaultId[data-idx="${idx}"]`).value;
-  vaults[idx].category = document.querySelector(`.vaultCategory[data-idx="${idx}"]`).value;
-  vaults[idx].progress = document.querySelector(`.vaultProgress[data-idx="${idx}"]`).value;
-  vaults[idx].notes = document.querySelector(`.vaultNotes[data-idx="${idx}"]`).value;
-  renderVaultTracker();
-};
-
-// Render all dashboard sections
-function renderDashboardContent() {
-  renderDamageReports();
-  renderUtilitySchedules();
-  renderVaultTracker();
-  showTab('damageReports');
-}
-
-// --- Auth/navigation logic ---
+// Register/login/logout
 async function registerUser(email, password, role) {
   const { data, error } = await supabase.auth.signUp({
     email,
@@ -290,15 +41,14 @@ async function registerUser(email, password, role) {
   if (error) {
     document.getElementById('registerError').textContent = error.message;
     document.getElementById('registerError').style.display = "block";
+  } else {
+    alert('Registration successful! Check your email for confirmation.');
+    showLogin();
   }
-  else alert('Registration successful! Check your email for a confirmation link.');
-  return data;
 }
+
 async function loginUser(email, password) {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password
-  });
+  const { data, error } = await supabase.auth.signInWithPassword({ email, password });
   if (error) {
     document.getElementById('loginMsg').textContent = error.message;
     document.getElementById('loginMsg').style.display = "block";
@@ -308,48 +58,242 @@ async function loginUser(email, password) {
       document.getElementById('resendConfirm').style.display = "none";
     }
     return null;
-  } else {
-    document.getElementById('loginMsg').style.display = "none";
-    document.getElementById('resendConfirm').style.display = "none";
-    showDashboard();
   }
+  document.getElementById('loginMsg').style.display = "none";
+  document.getElementById('resendConfirm').style.display = "none";
+  showDashboard();
+  loadVaults();
   return data;
 }
-async function handleRegister(e) {
-  e.preventDefault();
-  var email = document.getElementById('registerEmail').value.trim();
-  document.getElementById('registerError').style.display = "none";
-  const password = document.getElementById('registerPassword').value;
-  const role = document.getElementById('registerRole').value;
-  await registerUser(email, password, role);
+
+async function handleLogout() {
+  await supabase.auth.signOut();
   showLogin();
 }
-async function handleLogin(e) {
-  e.preventDefault();
-  var email = document.getElementById('loginEmail').value.trim();
-  const password = document.getElementById('loginPassword').value;
-  await loginUser(email, password);
-}
-async function handleResendConfirm() {
-  const email = document.getElementById("loginEmail").value.trim();
-  if (!email) {
-    alert("Enter your email first.");
-    return;
-  }
-  const { error } = await supabase.auth.resend({
-    type: "signup",
-    email
-  });
-  if (error) alert("Error resending. Contact admin.");
-  else alert("Confirmation email resent. Please check your inbox and spam!");
+
+// ---------- VAULT LOGIC ----------
+
+// Load vaults from Supabase database table "vaults"
+async function loadVaults() {
+  const { data, error } = await supabase.from('vaults').select('*');
+  vaults = data || [];
+  renderVaultTable();
 }
 
-// --- All event handlers after all fns are declared! ---
+async function saveVaultToDB(vault) {
+  // If editing, update; else, insert
+  if (editingVaultIdx !== null && vaults[editingVaultIdx]?.id) {
+    await supabase.from('vaults').update(vault).eq('id', vaults[editingVaultIdx].id);
+  } else {
+    await supabase.from('vaults').insert([vault]);
+  }
+  loadVaults();
+}
+
+// Render the main vault table
+function renderVaultTable() {
+  const container = document.getElementById('vaultTableContainer');
+  if (!vaults.length) {
+    container.innerHTML = `<p>No vaults tracked yet. Import or add manually.</p>`;
+    return;
+  }
+  let table = `<table id="vaultTable">
+    <thead>
+      <tr>
+        <th>Campus</th><th>Building</th><th>Vault ID</th>
+        <th>Status</th><th>Turnover Date</th>
+        <th>Attachment</th><th>Photo</th><th>Edit</th>
+      </tr>
+    </thead>
+    <tbody>`;
+  table += vaults.map((v, idx) =>
+    `<tr>
+      <td>${v.campus || ''}</td>
+      <td>${v.building || ''}</td>
+      <td>${v.vaultId || ''}</td>
+      <td>${v.status || ''}</td>
+      <td>${v.turnoverDate || ''}</td>
+      <td>${v.attachmentUrl ? `<a href="${v.attachmentUrl}" target="_blank">View</a>` : ''}
+          <input type="file" accept="image/*,application/pdf" style="display:none;" onchange="window.handleAttachFile(event,${idx})" />
+          <button onclick="this.previousElementSibling.click()">Attach File</button>
+      </td>
+      <td>${v.photoUrl ? `<img src="${v.photoUrl}" width="48" />` : ''}
+          <button onclick="window.editVault(${idx},true)">Take Photo</button>
+      </td>
+      <td><button onclick="window.editVault(${idx})">Edit</button></td>
+    </tr>`
+  ).join('');
+  table += `</tbody></table>`;
+  container.innerHTML = table;
+}
+
+// ---------- MODAL LOGIC ----------
+
+function showVaultModal(editIdx = null, photoCapture = false) {
+  editingVaultIdx = editIdx;
+  capturedPhoto = null;
+  // Populate if editing
+  let v = { campus:'', building:'', vaultId:'', status:'', turnoverDate:'', attachmentUrl:'', photoUrl:'' };
+  if (editIdx !== null && vaults[editIdx]) v = vaults[editIdx];
+  document.getElementById('modalTitle').textContent = editIdx !== null ? "Edit Vault Entry" : "Add Vault Entry";
+  document.getElementById('vCampus').value = v.campus || '';
+  document.getElementById('vBuilding').value = v.building || '';
+  document.getElementById('vVaultId').value = v.vaultId || '';
+  document.getElementById('vStatus').value = v.status || '';
+  document.getElementById('vTurnoverDate').value = v.turnoverDate || '';
+  document.getElementById('vaultModal').style.display = "block";
+  document.getElementById('vPhotoPreview').style.display = "none";
+  document.getElementById('vPhotoPreview').src = '';
+  document.getElementById('vAttachmentInput').value = '';
+  if (photoCapture) openCameraCapture();
+}
+
+function closeVaultModal() {
+  document.getElementById('vaultModal').style.display = "none";
+  editingVaultIdx = null;
+  capturedPhoto = null;
+}
+
+// Handle vault add/edit/save
+document.getElementById('vaultForm').onsubmit = async function(e) {
+  e.preventDefault();
+  const vault = {
+    campus: document.getElementById('vCampus').value,
+    building: document.getElementById('vBuilding').value,
+    vaultId: document.getElementById('vVaultId').value,
+    status: document.getElementById('vStatus').value,
+    turnoverDate: document.getElementById('vTurnoverDate').value,
+    attachmentUrl: vaults[editingVaultIdx]?.attachmentUrl || '',
+    photoUrl: capturedPhoto || vaults[editingVaultIdx]?.photoUrl || ''
+  };
+  // Attachment uploaded? If so, upload to Supabase Storage (not implemented in this snippet)
+  // ...same for capturedPhoto
+  await saveVaultToDB(vault);
+  closeVaultModal();
+  loadVaults();
+};
+document.getElementById('modalCloseBtn').onclick = closeVaultModal;
+
+// ---------- PHOTO CAPTURE ----------
+
+document.getElementById('vCapturePhotoBtn').onclick = openCameraCapture;
+
+function openCameraCapture() {
+  // Simple photo capture with getUserMedia & canvas
+  let modal = document.getElementById('vaultModal');
+  let video = document.createElement('video');
+  video.autoplay = true;
+  video.style.width = "100%";
+  modal.querySelector('.modal-content').appendChild(video);
+  navigator.mediaDevices.getUserMedia({ video:true })
+    .then(stream => {
+      video.srcObject = stream;
+      // Add photo button
+      let snapBtn = document.createElement('button');
+      snapBtn.textContent = "Capture Photo";
+      snapBtn.onclick = function() {
+        let canvas = document.createElement('canvas');
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
+        capturedPhoto = canvas.toDataURL('image/png');
+        document.getElementById('vPhotoPreview').src = capturedPhoto;
+        document.getElementById('vPhotoPreview').style.display = "block";
+        // Stop video/camera
+        stream.getTracks().forEach(track => track.stop());
+        video.remove();
+        snapBtn.remove();
+      }
+      modal.querySelector('.modal-content').appendChild(snapBtn);
+    });
+}
+
+// ---------- ATTACH FILE ----------
+
+window.handleAttachFile = async function(e, idx) {
+  const file = e.target.files[0];
+  if (!file) return;
+  // Upload to Supabase Storage (not shown here - see Supabase docs for implementation)
+  // Use: supabase.storage.from('attachments').upload(...)
+  // Temporary: use URL.createObjectURL for demo
+  vaults[idx].attachmentUrl = URL.createObjectURL(file);
+  renderVaultTable();
+};
+
+// ---------- EDIT VAULT ----------
+
+window.editVault = function(idx, photo = false) {
+  showVaultModal(idx, photo);
+};
+
+// ---------- ADD VAULT ----------
+
+document.getElementById('addVaultBtn').onclick = function() {
+  showVaultModal(null, false);
+};
+
+// ---------- EXCEL IMPORT ----------
+
+document.getElementById('vaultExcelInput').onchange = function(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e2) {
+    const workbook = XLSX.read(e2.target.result, { type: 'binary' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
+    const headerIdx = rows.findIndex(r => r && r.includes('Campus'));
+    if (headerIdx === -1) return alert("Header not found!");
+    const header = rows[headerIdx];
+    let mapField = key => header.findIndex(h => h && h.toLowerCase().includes(key));
+    for(let i = headerIdx+1; i < rows.length; i++) {
+      let row = rows[i];
+      if (!row) continue;
+      vaults.push({
+        campus: row[mapField('campus')] || '',
+        building: row[mapField('building')] || '',
+        vaultId: row[mapField('vault')] || row[mapField('id')] || '',
+        status: row[mapField('status')] || row[mapField('ready')] || '',
+        turnoverDate: row[mapField('date')] || ''
+      });
+    }
+    renderVaultTable();
+    // Optionally: sync imported to Supabase DB in bulk!
+  };
+  reader.readAsBinaryString(file);
+};
+
+// ---------- LOGOUT BUTTON ----------
+
+document.getElementById('logoutBtn').onclick = handleLogout;
+
+// ---------- REGISTER/BACK TO LOGIN BUTTONS ----------
+
+document.getElementById('switchToRegister').onclick = showRegister;
+document.getElementById('backToLogin').onclick = showLogin;
+
+// ---------- LOGIN/REGISTER FORMS ----------
+document.getElementById('loginForm').onsubmit = function(e) {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  loginUser(email, password);
+};
+document.getElementById('registerForm').onsubmit = function(e) {
+  e.preventDefault();
+  const email = document.getElementById('registerEmail').value.trim();
+  const password = document.getElementById('registerPassword').value;
+  const role = document.getElementById('registerRole').value;
+  registerUser(email, password, role);
+};
+document.getElementById('resendConfirm').onclick = async function() {
+  const email = document.getElementById("loginEmail").value.trim();
+  if (!email) { alert("Enter your email first."); return; }
+  const { error } = await supabase.auth.resend({type: "signup", email});
+  if (error) alert("Error resending. Contact admin."); else alert("Confirmation email resent!");
+};
+
+// ---------- APP INIT ----------
 window.onload = function() {
-  document.getElementById('switchToRegister').onclick = showRegister;
-  document.getElementById('backToLogin').onclick = showLogin;
-  document.getElementById('loginForm').onsubmit = handleLogin;
-  document.getElementById('registerForm').onsubmit = handleRegister;
-  document.getElementById('resendConfirm').onclick = handleResendConfirm;
   showLogin();
 };

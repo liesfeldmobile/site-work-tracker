@@ -1,68 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Liesfeld Site Work Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="styles.css">
-  <script src="vault_data.js"></script>
-  <script src="vault_part1.js"></script>
-  <script src="vault_part2.js"></script>
-  <script src="vault_ric2.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Excel parsing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
+  <!-- NAVIGATION (optional enhancement) -->
+  <nav>
+    <img src="logo.png" alt="Site Work Logo" class="logo-nav" />
+    <span class="nav-title">Vault Turnover Tracker</span>
+  </nav>
+
   <!-- LOGIN PAGE -->
-  <div id="loginPage" class="page" style="display:block">
-    <img src="logo.png" alt="Site Work Logo" class="logo">
+  <div id="loginPage" class="page" style="display:block;">
+    <img src="logo.png" alt="Site Work Logo" class="logo" />
     <h2>Login</h2>
     <form id="loginForm">
-      <input type="email" id="loginEmail" placeholder="Email" required>
-      <input type="password" id="loginPassword" placeholder="Password" required>
+      <input type="email" id="loginEmail" placeholder="Email" required />
+      <input type="password" id="loginPassword" placeholder="Password" required />
       <button type="submit">Login</button>
       <button type="button" id="resendConfirm" style="margin-top:8px; display:none;">Resend Confirmation Email</button>
     </form>
-    <p>Need an account?
-      <button id="switchToRegister" type="button">Register</button>
-    </p>
-    <span id="loginMsg" style="color:#c90000; display:none"></span>
+    <p>Need an account? <button id="switchToRegister" type="button">Register</button></p>
+    <p><span id="loginMsg" style="color:#c90000;display:none;"></span></p>
   </div>
+
   <!-- REGISTER PAGE -->
-  <div id="registerPage" class="page" style="display:none">
-    <img src="logo.png" alt="Site Work Logo" class="logo">
+  <div id="registerPage" class="page" style="display:none;">
+    <img src="logo.png" alt="Site Work Logo" class="logo" />
     <h2>Register</h2>
     <form id="registerForm">
-      <input type="email" id="registerEmail" placeholder="Email" required>
-      <input type="password" id="registerPassword" placeholder="Password" required>
-      <select id="registerRole">
+      <input type="email" id="registerEmail" placeholder="Email" required />
+      <input type="password" id="registerPassword" placeholder="Password" required />
+      <select id="registerRole" required>
+        <option value="">Select Role…</option>
+        <option value="user">User</option>
         <option value="admin">Admin</option>
-        <option value="field">Field Worker</option>
       </select>
       <button type="submit">Register</button>
-      <span id="registerError" style="display:none;color:#c90000"></span>
+      <button type="button" id="backToLogin">Back to Login</button>
     </form>
-    <button id="backToLogin">Back to Login</button>
+    <p style="color:#c90000;"><span id="registerError" style="display:none;"></span></p>
   </div>
-  <!-- DASHBOARD PAGE -->
-  <div id="dashboard" class="page" style="display:none">
-    <img src="logo.png" alt="Site Work Logo" class="logo">
-    <h2>Dashboard</h2>
-    <nav>
-      <button class="tabBtn" data-tab="damageReports">Damage Reports</button>
-      <button class="tabBtn" data-tab="utilitySchedules">Utility Schedules</button>
-      <button class="tabBtn" data-tab="vaultTracker">Vault Tracker</button>
-    </nav>
-    <div id="tabContent">
-      <div id="damageReports" class="tabSection"></div>
-      <div id="utilitySchedules" class="tabSection" style="display:none"></div>
-      <div id="vaultTracker" class="tabSection" style="display:none">
-        <form id="excelUploadForm">
-          <label>Import Excel (vaults): <input type="file" id="vaultExcelInput" accept=".xls,.xlsx"></label>
-        </form>
-      </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="page" style="display:none;">
+    <h2>Vault Tracker</h2>
+    <!-- Import and Add -->
+    <div class="action-bar">
+      <input type="file" id="vaultExcelInput" accept=".xlsx, .xls" />
+      <button id="addVaultBtn">Add New Vault Entry</button>
+      <button id="logoutBtn" style="float:right;">Logout</button>
     </div>
-    <button id="logoutBtn">Logout</button>
+    <!-- Vault Table -->
+    <div id="vaultTableContainer"></div>
   </div>
-  <script type="module" src="app.js"></script>
+
+  <!-- VAULT MODAL (ADD/EDIT) -->
+  <div id="vaultModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <span class="close" id="modalCloseBtn">&times;</span>
+      <h3 id="modalTitle">Add/Edit Vault Entry</h3>
+      <form id="vaultForm">
+        <input type="text" id="vCampus" placeholder="Campus" required />
+        <input type="text" id="vBuilding" placeholder="Building" required />
+        <input type="text" id="vVaultId" placeholder="Vault ID" required />
+        <input type="text" id="vStatus" placeholder="Status" required />
+        <input type="date" id="vTurnoverDate" placeholder="Turnover Date" required />
+        <input type="file" id="vAttachmentInput" accept="image/*,application/pdf" capture="environment" />
+        <button type="button" id="vCapturePhotoBtn">Take Photo</button>
+        <img id="vPhotoPreview" src="" alt="Photo Preview" style="display:none;max-width:100px;margin:10px 0 0 0;" />
+        <button type="submit" id="vaultSaveBtn">Save</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
