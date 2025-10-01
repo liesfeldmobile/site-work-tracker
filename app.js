@@ -1,7 +1,3 @@
-/*
-* Liesfeld Site Work Tracker Application - CLOUD-POWERED VERSION
-*/
-
 import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
 
 const supabaseUrl = 'https://sawnurwzfmkdjpafunxa.supabase.co'
@@ -114,5 +110,4 @@ function renderDashboardContent() {
   document.getElementById('damageReports').innerHTML = "<h3>Damage Reports</h3><p>No data yet.</p>";
   document.getElementById('utilitySchedules').innerHTML = "<h3>Utility Schedules</h3><p>No data yet.</p>";
   document.getElementById('vaultTracker').innerHTML = "<h3>Vault Tracker</h3><p>No data yet.</p>";
-  // Here is where you would load actual data from Supabase and populate these sections
 }
