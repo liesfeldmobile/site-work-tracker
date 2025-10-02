@@ -2,124 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Site Work Tracker</title>
   <link rel="manifest" href="manifest.json" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
-  <!-- Favicon link added -->
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" href="favicon.ico" type="image/x-icon" />
 </head>
 <body>
-  <div id="loginPage">
-    <h2>Login</h2>
-    <form id="loginForm">
-      <input id="loginEmail" type="email" placeholder="Email" required />
-      <input id="loginPassword" type="password" placeholder="Password" required />
-      <button type="submit">Login</button>
-    </form>
-    <button id="switchToRegister">Need account? Register</button>
-    <button id="resendConfirm">Resend Confirmation Email</button>
-    <span id="loginMsg" style="display:none;color:red;"></span>
-  </div>
-
-  <div id="registerPage" style="display:none;">
-    <h2>Register</h2>
-    <form id="registerForm">
-      <input id="registerEmail" type="email" placeholder="Email" required />
-      <input id="registerPassword" type="password" placeholder="Password" required />
-      <select id="registerRole">
-        <option value="field">Field Worker</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button type="submit">Register</button>
-    </form>
-    <button id="backToLogin">Back to Login</button>
-    <span id="registerError" style="display:none;color:red;"></span>
-  </div>
-
-  <div id="dashboard" style="display:none;">
-    <h1>Site Work Tracker Dashboard</h1>
-    <button id="logoutBtn" style="float: right;">Logout</button>
-    <div style="clear:both"></div>
-    
-    <section>
-      <h2>Vault Tracker</h2>
-      <button id="addVaultBtn">Add Vault</button>
-      <input id="vaultExcelInput" type="file" accept=".xlsx,.xls" />
-      <div id="vaultTableContainer"></div>
-    </section>
-
-    <section>
-      <h2>Damage Reports</h2>
-      <!-- This container will show the list of damage reports -->
-      <button id="addDamageBtn">Report Vault Damage</button>
-      <div id="damageReportTableContainer"></div>
-    </section>
-  </div>
-
-  <!-- Vault Modal -->
-  <div id="vaultModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <button id="modalCloseBtn" style="float:right;">×</button>
-      <h3 id="modalTitle">Add/Edit Vault Entry</h3>
-      <form id="vaultForm">
-        <label>Campus:<input id="vCampus" required /></label><br />
-        <label>Building:<input id="vBuilding" required /></label><br />
-        <label>Vault ID:<input id="vVaultId" required /></label><br />
-        <label>Status:<input id="vStatus" /></label>
-        <label>Turnover Date:<input id="vTurnoverDate" type="date" /></label>
-        <br />
-        <label>Attachment:<input id="vAttachmentInput" type="file" accept="image/*,application/pdf" /></label>
-        <br />
-        <button type="button" id="vCapturePhotoBtn">Capture Photo</button>
-        <img id="vPhotoPreview" style="display:none;max-width:200px;" />
-        <br />
-        <button type="submit">Save Vault</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- Damage Modal -->
-  <div id="damageModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <button id="damageModalCloseBtn" style="float:right;">×</button>
-      <h3 id="damageModalTitle">Report Vault Damage</h3>
-      <form id="damageForm">
-        <label>Campus:<input id="dCampus" required /></label><br />
-        <label>Building:<input id="dBuilding" required /></label><br />
-        <label>Vault ID:<input id="dVaultId" required /></label><br />
-        <label>Category:
-          <select id="dCategory">
-            <option value="">Select...</option>
-            <option value="telecom">Telecom</option>
-            <option value="electrical">Electrical</option>
-            <option value="water">Water</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-        <label>Status:
-          <select id="dStatus">
-            <option value="">Select...</option>
-            <option value="new">New/Not Started</option>
-            <option value="in_progress">In Progress</option>
-            <option value="fixed">Fixed/Turned Over</option>
-          </select>
-        </label>
-        <label>Progress:<input id="dProgress" /></label>
-        <label>Description:<textarea id="dDescription"></textarea></label>
-        <br />
-        <label>Attachment:<input id="dAttachmentInput" type="file" accept="image/*,video/*,application/pdf" /></label>
-        <br />
-        <button type="button" id="dCapturePhotoBtn">Capture Photo/Video</button>
-        <img id="dPhotoPreview" style="display:none;max-width:200px;" />
-        <video id="dVideoPreview" style="display:none;max-width:200px;" controls></video>
-        <br />
-        <button type="submit">Save Damage Report</button>
-      </form>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.17.5/dist/xlsx.full.min.js"></script>
+  <nav>
+    <img src="logo.png" alt="Site Work Tracker logo" class="logo-nav" />
+    <span class="nav-title">Site Work Tracker</span>
+  </nav>
+  <div id="main"></div>
   <script src="app.js"></script>
 </body>
 </html>

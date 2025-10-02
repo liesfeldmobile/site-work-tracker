@@ -1,124 +1,251 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <title>Site Work Tracker</title>
-  <link rel="manifest" href="manifest.json" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
-</head>
-<body>
-  <div id="loginPage">
+// app.js -- restores all app logic, handles routing, authentication, CRUD, localStorage
+
+const state = {
+  user: null,
+  users: JSON.parse(localStorage.getItem("users") || "[]"),
+  reports: JSON.parse(localStorage.getItem("reports") || "[]"),
+  vaults: JSON.parse(localStorage.getItem("vaults") || "[]"),
+};
+const $ = (s) => document.querySelector(s);
+
+function save() {
+  localStorage.setItem("users", JSON.stringify(state.users));
+  localStorage.setItem("reports", JSON.stringify(state.reports));
+  localStorage.setItem("vaults", JSON.stringify(state.vaults));
+}
+function route(page) {
+  if (page === "login") renderLogin();
+  else if (page === "register") renderRegister();
+  else if (!state.user) renderLogin();
+  else if (page === "dashboard" || !page) renderDashboard();
+  else if (page === "vault") renderVaultTracker();
+  else if (page === "damage") renderDamageReports();
+}
+window.addEventListener("popstate", () => {
+  const p = location.hash?.substring(1) || "dashboard";
+  route(p);
+});
+window.addEventListener("DOMContentLoaded", () => {
+  route(location.hash?.substring(1) || "dashboard");
+});
+
+function go(page) {
+  history.pushState({}, "", "#" + page);
+  route(page);
+}
+
+function renderLogin() {
+  $("#main").innerHTML = `
     <h2>Login</h2>
     <form id="loginForm">
-      <input id="loginEmail" type="email" placeholder="Email" required />
-      <input id="loginPassword" type="password" placeholder="Password" required />
+      <label>Username <input required name="username"></label>
+      <label>Password <input required name="password" type="password"></label>
       <button type="submit">Login</button>
+      <div id="loginMsg"></div>
     </form>
-    <button id="switchToRegister">Need account? Register</button>
-    <button id="resendConfirm">Resend Confirmation Email</button>
-    <span id="loginMsg" style="display:none;color:red;"></span>
-  </div>
+    <button onclick="go('register')">Register</button>
+  `;
+  $("#loginForm").onsubmit = (e) => {
+    e.preventDefault();
+    const { username, password } = Object.fromEntries(new FormData(e.target));
+    const user = state.users.find((u) => u.username === username && u.password === password);
+    if (!user) return ($("#loginMsg").textContent = "Invalid login");
+    state.user = user;
+    go("dashboard");
+  };
+}
 
-  <div id="registerPage" style="display:none;">
+function renderRegister() {
+  $("#main").innerHTML = `
     <h2>Register</h2>
     <form id="registerForm">
-      <input id="registerEmail" type="email" placeholder="Email" required />
-      <input id="registerPassword" type="password" placeholder="Password" required />
-      <select id="registerRole">
-        <option value="field">Field Worker</option>
-        <option value="admin">Admin</option>
-      </select>
-      <button type="submit">Register</button>
+      <label>Username <input required name="username"></label>
+      <label>Password <input required name="password" type="password"></label>
+      <label>Role
+        <select name="role">
+          <option value="field">Field Worker</option>
+          <option value="admin">Admin</option>
+        </select>
+      </label>
+      <button type="submit">Create Account</button>
+      <div id="registerError"></div>
     </form>
-    <button id="backToLogin">Back to Login</button>
-    <span id="registerError" style="display:none;color:red;"></span>
-  </div>
+    <button onclick="go('login')">Back to Login</button>
+  `;
+  $("#registerForm").onsubmit = (e) => {
+    e.preventDefault();
+    const { username, password, role } = Object.fromEntries(new FormData(e.target));
+    if (state.users.find((u) => u.username === username)) {
+      $("#registerError").textContent = "Username already taken!";
+      return;
+    }
+    state.users.push({ username, password, role });
+    save();
+    go("login");
+  };
+}
 
-  <div id="dashboard" style="display:none;">
-    <h1>Site Work Tracker Dashboard</h1>
-    <button id="logoutBtn" style="float: right;">Logout</button>
-    <div style="clear:both"></div>
-    
-    <section>
-      <h2>Vault Tracker</h2>
-      <button id="addVaultBtn">Add Vault</button>
-      <input id="vaultExcelInput" type="file" accept=".xlsx,.xls" />
-      <div id="vaultTableContainer"></div>
-    </section>
-
-    <section>
-      <h2>Damage Reports</h2>
-      <button id="addDamageBtn">Report Vault Damage</button>
-      <div id="damageReportTableContainer"></div>
-    </section>
-  </div>
-
-  <!-- Vault Modal -->
-  <div id="vaultModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <button id="modalCloseBtn" style="float:right;">×</button>
-      <h3 id="modalTitle">Add/Edit Vault Entry</h3>
-      <form id="vaultForm">
-        <label>Campus:<input id="vCampus" required /></label><br />
-        <label>Building:<input id="vBuilding" required /></label><br />
-        <label>Vault ID:<input id="vVaultId" required /></label><br />
-        <label>Status:<input id="vStatus" /></label>
-        <label>Turnover Date:<input id="vTurnoverDate" type="date" /></label>
-        <br />
-        <label>Attachment:<input id="vAttachmentInput" type="file" accept="image/*,application/pdf" /></label>
-        <br />
-        <button type="button" id="vCapturePhotoBtn">Capture Photo</button>
-        <img id="vPhotoPreview" style="display:none;max-width:200px;" />
-        <br />
-        <button type="submit">Save Vault</button>
-      </form>
+function renderDashboard() {
+  $("#main").innerHTML = `
+    <h2>Dashboard</h2>
+    <div>Hello <b>${state.user.username}</b>!</div>
+    <div class="action-bar">
+      <button onclick="go('vault')">Vault Tracker</button>
+      <button onclick="go('damage')">Damage Reports</button>
+      <button onclick="logout()">Logout</button>
     </div>
-  </div>
+    <ul>
+      <li>Total Vaults: ${state.vaults.length}</li>
+      <li>Total Reports: ${state.reports.length}</li>
+    </ul>
+  `;
+}
+function logout() {
+  state.user = null;
+  go("login");
+}
 
-  <!-- Damage Modal -->
-  <div id="damageModal" class="modal" style="display:none;">
-    <div class="modal-content">
-      <button id="damageModalCloseBtn" style="float:right;">×</button>
-      <h3 id="damageModalTitle">Report Vault Damage</h3>
-      <form id="damageForm">
-        <label>Campus:<input id="dCampus" required /></label><br />
-        <label>Building:<input id="dBuilding" required /></label><br />
-        <label>Vault ID:<input id="dVaultId" required /></label><br />
-        <label>Category:
-          <select id="dCategory">
-            <option value="">Select...</option>
-            <option value="telecom">Telecom</option>
-            <option value="electrical">Electrical</option>
-            <option value="water">Water</option>
-            <option value="other">Other</option>
-          </select>
-        </label>
-        <label>Status:
-          <select id="dStatus">
-            <option value="">Select...</option>
-            <option value="new">New/Not Started</option>
-            <option value="in_progress">In Progress</option>
-            <option value="fixed">Fixed/Turned Over</option>
-          </select>
-        </label>
-        <label>Progress:<input id="dProgress" /></label>
-        <label>Description:<textarea id="dDescription"></textarea></label>
-        <br />
-        <label>Attachment:<input id="dAttachmentInput" type="file" accept="image/*,video/*,application/pdf" /></label>
-        <br />
-        <button type="button" id="dCapturePhotoBtn">Capture Photo/Video</button>
-        <img id="dPhotoPreview" style="display:none;max-width:200px;" />
-        <video id="dVideoPreview" style="display:none;max-width:200px;" controls></video>
-        <br />
-        <button type="submit">Save Damage Report</button>
-      </form>
+function renderVaultTracker() {
+  $("#main").innerHTML = `
+    <h2>Vault Tracker</h2>
+    <button onclick="go('dashboard')">Back</button>
+    <button onclick="showVaultForm()">Add Vault Entry</button>
+    <div id="vaultTableContainer">
+      ${renderVaultTable()}
     </div>
-  </div>
+    <div id="modal"></div>
+  `;
+}
 
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.17.5/dist/xlsx.full.min.js"></script>
-  <!-- Fix: load app.js as a module -->
-  <script type="module" src="app.js"></script>
-</body>
-</html>
+function renderVaultTable() {
+  if (!state.vaults.length) return "<div>No vaults entered.</div>";
+  return `
+    <table>
+      <tr>
+        <th>Campus</th><th>Building</th><th>Vault ID</th><th>Status</th><th>Actions</th>
+      </tr>
+      ${state.vaults.map((v,i)=>`
+        <tr>
+          <td>${v.campus}</td><td>${v.building}</td>
+          <td>${v.vaultId}</td><td>${v.status||""}</td>
+          <td>
+            <button onclick="editVault(${i})">Edit</button>
+            <button onclick="deleteVault(${i})">Delete</button>
+          </td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+window.editVault = function(i) { showVaultForm(state.vaults[i],i); }
+window.deleteVault = function(i) {
+  if (confirm("Delete this vault entry?")) {
+    state.vaults.splice(i,1); save(); renderVaultTracker();
+  }
+}
+window.showVaultForm = function(v={},idx) {
+  $("#modal").innerHTML = `
+    <div class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <form id="vaultForm">
+          <label>Campus <input name="campus" required value="${v.campus||""}"></label>
+          <label>Building <input name="building" required value="${v.building||""}"></label>
+          <label>Vault ID <input name="vaultId" required value="${v.vaultId||""}"></label>
+          <label>Status <input name="status" value="${v.status||""}"></label>
+          <label>Turnover Date <input name="turnover" type="date" value="${v.turnover||""}"></label>
+          <button type="submit">${idx!=null?"Update":"Add"}</button>
+        </form>
+      </div>
+    </div>
+  `;
+  $("#vaultForm").onsubmit = (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    if(idx!=null) state.vaults[idx] = data;
+    else state.vaults.push(data);
+    save(); closeModal(); renderVaultTracker();
+  };
+}
+window.closeModal = function() {
+  $("#modal").innerHTML = "";
+}
+
+function renderDamageReports() {
+  $("#main").innerHTML = `
+    <h2>Damage Reports</h2>
+    <button onclick="go('dashboard')">Back</button>
+    <button onclick="showReportForm()">Add Damage Report</button>
+    <div id="damageTableContainer">
+      ${renderDamageTable()}
+    </div>
+    <div id="modal"></div>
+  `;
+}
+function renderDamageTable() {
+  if (!state.reports.length) return "<div>No reports.</div>";
+  return `
+    <table>
+      <tr>
+        <th>Campus</th><th>Building</th><th>Vault ID</th><th>Category</th>
+        <th>Status</th><th>Progress</th><th>Description</th><th>By</th><th>Actions</th>
+      </tr>
+      ${state.reports.map((r,i)=>`
+        <tr>
+          <td>${r.campus}</td><td>${r.building}</td>
+          <td>${r.vaultId}</td><td>${r.category}</td>
+          <td>${r.status}</td><td>${r.progress}</td><td>${r.desc}</td>
+          <td>${r.author||""}</td>
+          <td>
+            ${state.user.username === r.author ? `<button onclick="deleteReport(${i})">Delete</button>` : ""}
+          </td>
+        </tr>
+      `).join("")}
+    </table>
+  `;
+}
+window.deleteReport = function(i) {
+  if (confirm("Delete this report?")) {
+    state.reports.splice(i,1); save(); renderDamageReports();
+  }
+}
+window.showReportForm = function(r={},idx) {
+  $("#modal").innerHTML = `
+    <div class="modal">
+      <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <form id="damageForm">
+          <label>Campus <input name="campus" required value="${r.campus||""}"></label>
+          <label>Building <input name="building" required value="${r.building||""}"></label>
+          <label>Vault ID <input name="vaultId" required value="${r.vaultId||""}"></label>
+          <label>Category
+            <select name="category">
+              <option>Telecom</option>
+              <option>Electrical</option>
+              <option>Water</option>
+              <option>Other</option>
+            </select>
+          </label>
+          <label>Status
+            <select name="status">
+              <option>New/Not Started</option>
+              <option>In Progress</option>
+              <option>Fixed/Turned Over</option>
+            </select>
+          </label>
+          <label>Progress <input name="progress" value="${r.progress||""}"></label>
+          <label>Description <textarea name="desc">${r.desc||""}</textarea></label>
+          <button type="submit">${idx!=null?"Update":"Add"}</button>
+        </form>
+      </div>
+    </div>
+  `;
+  $("#damageForm").onsubmit = (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    data.author = state.user.username;
+    if(idx!=null) state.reports[idx] = data;
+    else state.reports.push(data);
+    save(); closeModal(); renderDamageReports();
+  };
+}
