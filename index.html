@@ -4,33 +4,15 @@
   <meta charset="UTF-8">
   <title>Site Work Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- Vault data loaders (these should exist in your repo) -->
+  <script src="vault_data.js"></script>
+  <script src="vault_part1.js"></script>
+  <script src="vault_part2.js"></script>
+  <script src="vault_ric2.js"></script>
+  <!-- SheetJS for Excel parsing -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <style>
-    body { background: #181b1e; font-family: 'Segoe UI', Arial, sans-serif; margin:0; }
-    header { display:flex; align-items:center; background:#222;padding:1rem 2rem;}
-    .logo { height:48px;margin-right:18px;}
-    .title { font-size:2rem; font-weight:bold; color:#fff;}
-    nav { display:flex; gap:36px; background:#232629; padding:0.7em 2em; position:relative;}
-    nav .tab { color:#fff;font-weight:600;cursor:pointer;font-size:1.13em;padding-bottom:5px;transition:color .2s;}
-    nav .tab.active { color:#e62429; border-bottom: 2px solid #e62429;}
-    .main-content {background:#232629;max-width:1300px;margin:38px auto;padding:42px 36px;border-radius:16px;}
-    h2 {font-size:2em;margin:0 0 32px 0;}
-    .control-row {display:flex;gap:12px;margin-bottom:26px;flex-wrap:wrap;}
-    .control-row > * {font-size:1em;}
-    .filter, .input {padding:8px 10px;border-radius:7px;border:1px solid #bbb;}
-    .input {width:120px;}
-    .input.notes {width:180px;}
-    .add-btn {background:#e62429;color:#fff;font-weight:bold;border:none;border-radius:7px; padding:9px 24px;font-size:1em;cursor:pointer;}
-    .stats {font-weight:500;margin-bottom:12px;}
-    table {border-radius:8px; width:100%; border-collapse:collapse; background:#fff; color:#232629;box-shadow:0 2px 24px #0002;}
-    th, td {padding:11px 13px; border-bottom:1px solid #eee;}
-    th {background:#eef; color:#232629; font-weight:bold;}
-    input.table-input {width:100%;background:#f9f9fb;border-radius:6px;border:1px solid #ccc;padding:7px;}
-    select.progress {border-radius:5px;padding:6px;}
-    .hidden {display:none;}
-    @media(max-width:900px){.main-content{padding:13px 3vw;}}
-    @media(max-width:600px){nav{gap:12px;padding:0.7em 1em;} h2{font-size:1.2em;} .main-content{padding:8px;}}
-  </style>
 </head>
 <body>
   <header>
@@ -46,15 +28,28 @@
   </nav>
   <div class="main-content" id="dashboard-page">
     <h2>Dashboard</h2>
-    <div>This space reserved for analytics summary, quick stats and KPIs.</div>
+    <div id="dashboard-stats"></div>
+    <div id="dashboard-charts"></div>
   </div>
   <div class="main-content hidden" id="damage-page">
     <h2>Damage Reports</h2>
-    <div>Add interactive damage report table and actions here.</div>
+    <div class="control-row">
+      <input class="input" id="damageTypeInput" placeholder="Damage Type">
+      <input class="input" id="damageLocationInput" placeholder="Location">
+      <button class="add-btn small" id="addDamageBtn">Add Damage</button>
+    </div>
+    <div class="stats" id="damageStats"></div>
+    <div id="damageTableContainer"></div>
   </div>
   <div class="main-content hidden" id="schedules-page">
     <h2>Schedules</h2>
-    <div>Add scheduling/calendar/table features here.</div>
+    <div class="control-row">
+      <input class="input" id="scheduleTaskInput" placeholder="Task Name">
+      <input class="input" id="scheduleDateInput" type="date">
+      <button class="add-btn small" id="addScheduleBtn">Add Task</button>
+    </div>
+    <div class="stats" id="scheduleStats"></div>
+    <div id="scheduleTableContainer"></div>
   </div>
   <div class="main-content hidden" id="vaults-page">
     <h2>Vault Tracker</h2>
@@ -76,6 +71,8 @@
     <div class="stats" id="vaultStats"></div>
     <div id="vaultTableContainer"></div>
   </div>
+
+  <!-- Main JS controls and table logic -->
   <script type="module">
 const tabEls = document.querySelectorAll('.tab');
 const pages = {
@@ -91,10 +88,15 @@ tabEls.forEach(tab => {
     tab.classList.add('active');
     Object.values(pages).forEach(p => p.classList.add('hidden'));
     pages[tab.dataset.tab].classList.remove('hidden');
+    if(tab.dataset.tab==='dashboard') renderDashboard();
+    if(tab.dataset.tab==='damage') renderDamageTable();
+    if(tab.dataset.tab==='schedules') renderScheduleTable();
+    if(tab.dataset.tab==='vaults') { renderVaultTable(); }
   });
 });
 
-let vaultRows = [];
+// --- Vault Table: Loads all entries from your .js vault data files!
+let vaultRows = Array.isArray(window.DEFAULT_VAULTS) ? window.DEFAULT_VAULTS.slice() : [];
 let filters = { campus: '', category: '', building: '', vaultId: '', progress: '', notes: ''};
 
 function renderVaultTable() {
@@ -103,15 +105,14 @@ function renderVaultTable() {
   let filtered = vaultRows.filter(row =>
     (!filters.campus || row.Campus===filters.campus) &&
     (!filters.category || row.Category===filters.category) &&
-    (!filters.building || row.Building?.toLowerCase().includes(filters.building.toLowerCase())) &&
-    (!filters.vaultId || row['Vault ID']?.toLowerCase().includes(filters.vaultId.toLowerCase())) &&
+    (!filters.building || row.Building?.toLowerCase().includes(filters.building?.toLowerCase())) &&
+    (!filters.vaultId || row['Vault ID']?.toLowerCase().includes(filters.vaultId?.toLowerCase())) &&
     (!filters.progress || row.Progress===filters.progress) &&
     (!filters.notes || (row.Notes || '').toLowerCase().includes(filters.notes.toLowerCase()))
   );
   let turned = filtered.filter(r=>r.Progress==='Turned Over').length;
   let total = filtered.length;
   document.getElementById('vaultStats').textContent = `${turned} turned over / ${total} remaining`;
-
   if(!filtered.length) {
     container.innerHTML = '<div style="color:#bbb;padding:18px;">No vaults tracked yet. Import or add manually.</div>';
     return;
@@ -177,6 +178,7 @@ document.getElementById('excelInput').addEventListener('change', e => {
     })).filter(r => r['Vault ID']);
     refreshFilters();
     renderVaultTable();
+    renderDashboard(); // update Dashboard stats
   };
   reader.readAsBinaryString(file);
 });
@@ -190,11 +192,170 @@ document.getElementById('addVaultBtn').addEventListener('click', () => {
 window.handleProgressChange = (idx, val) => {
   vaultRows[idx].Progress = val;
   renderVaultTable();
+  renderDashboard();
 };
 window.handleNotesChange = (idx, val) => {
   vaultRows[idx].Notes = val;
 };
+
+/// --- Damage Report Table ---
+let damageRows = [];
+function renderDamageTable() {
+  const container = document.getElementById('damageTableContainer');
+  if(!container) return;
+  let reported = damageRows.length;
+  let open = damageRows.filter(r=>!r.Resolved).length;
+  document.getElementById('damageStats').textContent = `${reported} reported / ${open} open`;
+  if(!damageRows.length) {
+    container.innerHTML = '<div style="color:#bbb;padding:18px;">No damages reported yet.</div>';
+    return;
+  }
+  let html = `<table><thead>
+    <tr>
+      <th>Type</th><th>Location</th><th>Date</th><th>Status</th><th>Action</th><th>Notes</th>
+    </tr></thead><tbody>`;
+  html += damageRows.map((row, idx) =>
+    `<tr>
+      <td>${row.Type || ''}</td>
+      <td>${row.Location || ''}</td>
+      <td>${row.Date || ''}</td>
+      <td>
+        <span class="damage-status">${row.Resolved?'Resolved':'Open'}</span>
+      </td>
+      <td>
+        <button class="add-btn small" onclick="window.toggleResolved(${idx})">${row.Resolved?'Reopen':'Resolve'}</button>
+        <button class="add-btn small" style="background:#aaa;" onclick="window.removeDamage(${idx})">Remove</button>
+      </td>
+      <td>
+        <input class="table-input" type="text" value="${row.Notes||''}" onchange="window.handleDamageNotes(${idx}, this.value)" />
+      </td>
+    </tr>`
+  ).join('');
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+window.toggleResolved = (idx) => {
+  damageRows[idx].Resolved = !damageRows[idx].Resolved;
+  renderDamageTable();
+  renderDashboard();
+};
+window.removeDamage = (idx) => {
+  damageRows.splice(idx,1);
+  renderDamageTable();
+  renderDashboard();
+};
+window.handleDamageNotes = (idx, val) => {
+  damageRows[idx].Notes = val;
+};
+// Add new damage
+document.getElementById('addDamageBtn').addEventListener('click', () => {
+  const type = document.getElementById('damageTypeInput').value.trim();
+  const loc = document.getElementById('damageLocationInput').value.trim();
+  if(type && loc) {
+    damageRows.unshift({
+      Type: type, Location: loc, Date: new Date().toLocaleDateString(), Resolved: false, Notes: ''
+    });
+    document.getElementById('damageTypeInput').value = '';
+    document.getElementById('damageLocationInput').value = '';
+    renderDamageTable();
+    renderDashboard();
+  }
+});
+
+/// --- Schedules Table ---
+let scheduleRows = [];
+function renderScheduleTable() {
+  const container = document.getElementById('scheduleTableContainer');
+  if(!container) return;
+  let total = scheduleRows.length;
+  let complete = scheduleRows.filter(r=>r.Done).length;
+  document.getElementById('scheduleStats').textContent = `${complete} complete / ${total} scheduled`;
+  if(!scheduleRows.length) {
+    container.innerHTML = '<div style="color:#bbb;padding:18px;">No scheduled tasks.</div>';
+    return;
+  }
+  let html = `<table><thead>
+    <tr>
+      <th>Task</th><th>Date</th><th>Status</th><th>Action</th><th>Notes</th>
+    </tr></thead><tbody>`;
+  html += scheduleRows.map((row, idx) =>
+    `<tr>
+      <td>${row.Task || ''}</td>
+      <td>${row.Date || ''}</td>
+      <td>
+        <span class="schedule-status">${row.Done?'Done':'Pending'}</span>
+      </td>
+      <td>
+        <button class="add-btn small" onclick="window.toggleDone(${idx})">${row.Done?'Undo':'Mark Done'}</button>
+        <button class="add-btn small" style="background:#aaa;" onclick="window.removeSchedule(${idx})">Remove</button>
+      </td>
+      <td>
+        <input class="table-input" type="text" value="${row.Notes||''}" onchange="window.handleScheduleNotes(${idx}, this.value)" />
+      </td>
+    </tr>`
+  ).join('');
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+window.toggleDone = (idx) => {
+  scheduleRows[idx].Done = !scheduleRows[idx].Done;
+  renderScheduleTable();
+  renderDashboard();
+};
+window.removeSchedule = (idx) => {
+  scheduleRows.splice(idx,1);
+  renderScheduleTable();
+  renderDashboard();
+};
+window.handleScheduleNotes = (idx, val) => {
+  scheduleRows[idx].Notes = val;
+};
+// Add new schedule item
+document.getElementById('addScheduleBtn').addEventListener('click', () => {
+  const task = document.getElementById('scheduleTaskInput').value.trim();
+  const date = document.getElementById('scheduleDateInput').value;
+  if(task && date) {
+    scheduleRows.unshift({
+      Task: task, Date: date, Done: false, Notes: ''
+    });
+    document.getElementById('scheduleTaskInput').value = '';
+    document.getElementById('scheduleDateInput').value = '';
+    renderScheduleTable();
+    renderDashboard();
+  }
+});
+
+/// --- Dashboard Analytics ---
+function renderDashboard() {
+  const vaultCount = vaultRows.length;
+  const vaultOver = vaultRows.filter(v=>v.Progress==='Turned Over').length;
+  const damageOpen = damageRows.filter(d=>!d.Resolved).length;
+  const damageResolved = damageRows.filter(d=>!!d.Resolved).length;
+  const schedulesTotal = scheduleRows.length;
+  const scheduleComplete = scheduleRows.filter(s=>s.Done).length;
+  let html = `<div style="display:flex; gap:32px; flex-wrap:wrap; padding-bottom:24px;">
+    <div style="background:#fff3f3;color:#e62429;padding:18px 34px;border-radius:13px;min-width:190px;">
+      <div style="font-size:1.2em; font-weight:bold;">Vaults Tracked</div>
+      <div style="font-size:2em; font-weight:bold;">${vaultCount}</div>
+      <div>${vaultOver} Turned Over</div>
+    </div>
+    <div style="background:#e3ffd1;color:#4caf50;padding:18px 34px;border-radius:13px;min-width:190px;">
+      <div style="font-size:1.2em; font-weight:bold;">Damage Reports</div>
+      <div style="font-size:2em; font-weight:bold;">${damageOpen}</div>
+      <div>${damageResolved} Resolved</div>
+    </div>
+    <div style="background:#f3f6ff;color:#1565c0;padding:18px 34px;border-radius:13px;min-width:190px;">
+      <div style="font-size:1.2em; font-weight:bold;">Schedules</div>
+      <div style="font-size:2em; font-weight:bold;">${schedulesTotal}</div>
+      <div>${scheduleComplete} Completed</div>
+    </div>
+  </div>`;
+  document.getElementById('dashboard-stats').innerHTML = html;
+}
+renderDashboard();
 renderVaultTable();
+renderDamageTable();
+renderScheduleTable();
   </script>
 </body>
 </html>
