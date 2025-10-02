@@ -4,22 +4,22 @@
   <meta charset="UTF-8">
   <title>Site Work Tracker</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Progressive Web App for vault damage and utility schedule tracking."/>
+  <meta name="description" content="Site work PWA: schedule builder, vault tracker, and damage reports" />
   <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icons/icon-192.png" sizes="192x192">
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta name="theme-color" content="#f6f9fc">
+  <meta name="theme-color" content="#202020">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
   <div class="topbar">
-    <img src="logo.png" alt="Company logo" class="logo" />
-    <nav class="navbar" aria-label="Main navigation">
-      <button class="navlink" onclick="go('dashboard')" id="nav-dashboard">Dashboard</button>
-      <button class="navlink" onclick="go('vault')" id="nav-vault">Vaults</button>
-      <button class="navlink" onclick="go('damage')" id="nav-damage">Damage Reports</button>
-      <button class="navlink" onclick="go('addvault')" id="nav-addvault">Add Vault</button>
-      <button class="navlink" onclick="logout()">Logout</button>
+    <img src="logo.png" alt="Liesfeld logo" class="logo" />
+    <nav class="nav">
+      <button class="navbtn" onclick="go('dashboard')" id="nav-dashboard">Dashboard</button>
+      <button class="navbtn" onclick="go('schedule')" id="nav-schedule">Schedule</button>
+      <button class="navbtn" onclick="go('damage')" id="nav-damage">Damage Reports</button>
+      <button class="navbtn" onclick="go('vault')" id="nav-vault">Vaults</button>
+      <button class="navbtn" onclick="logout()">Logout</button>
     </nav>
   </div>
   <main id="main" tabindex="-1"></main>
