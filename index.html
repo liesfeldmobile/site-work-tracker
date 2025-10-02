@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Site Work Tracker</title>
+  <meta name="theme-color" content="#2d6cdf">
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="styles.css" />
   <link rel="icon" href="favicon.ico" type="image/x-icon" />
@@ -12,8 +13,13 @@
   <nav>
     <img src="logo.png" alt="Site Work Tracker logo" class="logo-nav" />
     <span class="nav-title">Site Work Tracker</span>
+    <div class="nav-right">
+      <span id="userWelcome"></span>
+      <button id="themeToggle" title="Toggle Light/Dark Mode">🌘</button>
+    </div>
   </nav>
   <div id="main"></div>
+  <div id="toast"></div>
   <script src="vaults_data_combined.js"></script>
   <script src="app.js"></script>
 </body>
