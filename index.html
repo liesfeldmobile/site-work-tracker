@@ -1,361 +1,123 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Site Work Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="stylesheet" href="styles.css" />
-  <!-- Vault data loaders (these should exist in your repo) -->
-  <script src="vault_data.js"></script>
-  <script src="vault_part1.js"></script>
-  <script src="vault_part2.js"></script>
-  <script src="vault_ric2.js"></script>
-  <!-- SheetJS for Excel parsing -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
 </head>
 <body>
-  <header>
-    <img src="logo.png" class="logo" alt="Logo" onerror="this.style.display='none'">
-    <span class="title">Site Work Tracker</span>
-  </header>
-  <nav>
-    <span class="tab active" data-tab="dashboard">Dashboard</span>
-    <span class="tab" data-tab="damage">Damage Reports</span>
-    <span class="tab" data-tab="schedules">Schedules</span>
-    <span class="tab" data-tab="vaults">Vault Tracker</span>
-    <span class="tab" data-tab="logout" style="margin-left:auto;">Logout</span>
-  </nav>
-  <div class="main-content" id="dashboard-page">
-    <h2>Dashboard</h2>
-    <div id="dashboard-stats"></div>
-    <div id="dashboard-charts"></div>
+  <div id="loginPage">
+    <h2>Login</h2>
+    <form id="loginForm">
+      <input id="loginEmail" type="email" placeholder="Email" required />
+      <input id="loginPassword" type="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+    <button id="switchToRegister">Need account? Register</button>
+    <button id="resendConfirm">Resend Confirmation Email</button>
+    <span id="loginMsg" style="display:none;color:red;"></span>
   </div>
-  <div class="main-content hidden" id="damage-page">
-    <h2>Damage Reports</h2>
-    <div class="control-row">
-      <input class="input" id="damageTypeInput" placeholder="Damage Type">
-      <input class="input" id="damageLocationInput" placeholder="Location">
-      <button class="add-btn small" id="addDamageBtn">Add Damage</button>
-    </div>
-    <div class="stats" id="damageStats"></div>
-    <div id="damageTableContainer"></div>
-  </div>
-  <div class="main-content hidden" id="schedules-page">
-    <h2>Schedules</h2>
-    <div class="control-row">
-      <input class="input" id="scheduleTaskInput" placeholder="Task Name">
-      <input class="input" id="scheduleDateInput" type="date">
-      <button class="add-btn small" id="addScheduleBtn">Add Task</button>
-    </div>
-    <div class="stats" id="scheduleStats"></div>
-    <div id="scheduleTableContainer"></div>
-  </div>
-  <div class="main-content hidden" id="vaults-page">
-    <h2>Vault Tracker</h2>
-    <div class="control-row">
-      <label>Campus: <select class="filter" id="filter-campus"><option value="">All</option></select></label>
-      <label>Category: <select class="filter" id="filter-category"><option value="">All</option></select></label>
-      <input class="input" id="filter-building" placeholder="Building">
-      <input class="input" id="filter-vaultId" placeholder="Vault ID">
-      <select class="filter" id="filter-progress">
-        <option value="">All Progress</option>
-        <option>Not Started</option>
-        <option>Turned Over</option>
-        <option>In Progress</option>
+
+  <div id="registerPage" style="display:none;">
+    <h2>Register</h2>
+    <form id="registerForm">
+      <input id="registerEmail" type="email" placeholder="Email" required />
+      <input id="registerPassword" type="password" placeholder="Password" required />
+      <select id="registerRole">
+        <option value="field">Field Worker</option>
+        <option value="admin">Admin</option>
       </select>
-      <input class="input notes" id="filter-notes" placeholder="Notes (optional)">
-      <input type="file" id="excelInput" accept=".xlsx,.xls" style="margin-left:20px;">
-      <button class="add-btn" id="addVaultBtn">Add Vault</button>
-    </div>
-    <div class="stats" id="vaultStats"></div>
-    <div id="vaultTableContainer"></div>
+      <button type="submit">Register</button>
+    </form>
+    <button id="backToLogin">Back to Login</button>
+    <span id="registerError" style="display:none;color:red;"></span>
   </div>
 
-  <!-- Main JS controls and table logic -->
-  <script type="module">
-const tabEls = document.querySelectorAll('.tab');
-const pages = {
-  dashboard: document.getElementById('dashboard-page'),
-  damage: document.getElementById('damage-page'),
-  schedules: document.getElementById('schedules-page'),
-  vaults: document.getElementById('vaults-page'),
-};
-tabEls.forEach(tab => {
-  tab.addEventListener('click', () => {
-    if(tab.dataset.tab === 'logout') { location.reload(); return; }
-    tabEls.forEach(t => t.classList.remove('active'));
-    tab.classList.add('active');
-    Object.values(pages).forEach(p => p.classList.add('hidden'));
-    pages[tab.dataset.tab].classList.remove('hidden');
-    if(tab.dataset.tab==='dashboard') renderDashboard();
-    if(tab.dataset.tab==='damage') renderDamageTable();
-    if(tab.dataset.tab==='schedules') renderScheduleTable();
-    if(tab.dataset.tab==='vaults') { renderVaultTable(); }
-  });
-});
+  <div id="dashboard" style="display:none;">
+    <h1>Site Work Tracker Dashboard</h1>
+    <button id="logoutBtn" style="float: right;">Logout</button>
+    <div style="clear:both"></div>
+    
+    <section>
+      <h2>Vault Tracker</h2>
+      <button id="addVaultBtn">Add Vault</button>
+      <input id="vaultExcelInput" type="file" accept=".xlsx,.xls" />
+      <div id="vaultTableContainer"></div>
+    </section>
 
-// --- Vault Table: Loads all entries from your .js vault data files!
-let vaultRows = Array.isArray(window.DEFAULT_VAULTS) ? window.DEFAULT_VAULTS.slice() : [];
-let filters = { campus: '', category: '', building: '', vaultId: '', progress: '', notes: ''};
+    <section>
+      <h2>Damage Reports</h2>
+      <!-- This container will show the list of damage reports -->
+      <button id="addDamageBtn">Report Vault Damage</button>
+      <div id="damageReportTableContainer"></div>
+    </section>
+  </div>
 
-function renderVaultTable() {
-  const container = document.getElementById('vaultTableContainer');
-  if(!container) return;
-  let filtered = vaultRows.filter(row =>
-    (!filters.campus || row.Campus===filters.campus) &&
-    (!filters.category || row.Category===filters.category) &&
-    (!filters.building || row.Building?.toLowerCase().includes(filters.building?.toLowerCase())) &&
-    (!filters.vaultId || row['Vault ID']?.toLowerCase().includes(filters.vaultId?.toLowerCase())) &&
-    (!filters.progress || row.Progress===filters.progress) &&
-    (!filters.notes || (row.Notes || '').toLowerCase().includes(filters.notes.toLowerCase()))
-  );
-  let turned = filtered.filter(r=>r.Progress==='Turned Over').length;
-  let total = filtered.length;
-  document.getElementById('vaultStats').textContent = `${turned} turned over / ${total} remaining`;
-  if(!filtered.length) {
-    container.innerHTML = '<div style="color:#bbb;padding:18px;">No vaults tracked yet. Import or add manually.</div>';
-    return;
-  }
-  let html = `<table><thead>
-    <tr>
-      <th>Campus</th><th>Building</th><th>Vault ID</th>
-      <th>Category</th><th>Progress</th><th>Notes</th>
-    </tr>
-    </thead><tbody>`;
-  html += filtered.map((row, idx) =>
-    `<tr>
-      <td>${row.Campus || ''}</td>
-      <td>${row.Building || ''}</td>
-      <td>${row['Vault ID'] || ''}</td>
-      <td>${row.Category || ''}</td>
-      <td>
-        <select class="progress" onchange="window.handleProgressChange(${idx}, this.value)">
-          <option${row.Progress==='Not Started'?' selected':''}>Not Started</option>
-          <option${row.Progress==='Turned Over'?' selected':''}>Turned Over</option>
-          <option${row.Progress==='In Progress'?' selected':''}>In Progress</option>
-        </select>
-      </td>
-      <td>
-        <input class="table-input" type="text" value="${row.Notes||''}" onchange="window.handleNotesChange(${idx}, this.value)" />
-      </td>
-    </tr>`
-  ).join('');
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-function refreshFilters() {
-  let campusSet = [...new Set(vaultRows.map(r=>r.Campus).filter(Boolean))];
-  let campusSel = document.getElementById('filter-campus');
-  campusSel.innerHTML = '<option value="">All</option>'+campusSet.map(c=>`<option>${c}</option>`).join('');
-  let catSet = [...new Set(vaultRows.map(r=>r.Category).filter(Boolean))];
-  let catSel = document.getElementById('filter-category');
-  catSel.innerHTML = '<option value="">All</option>'+catSet.map(cat=>`<option>${cat}</option>`).join('');
-}
-['campus','category','building','vaultId','progress','notes'].forEach(f => {
-  document.getElementById(`filter-${f}`).addEventListener('input', e => {
-    filters[f] = e.target.value;
-    renderVaultTable();
-  });
-});
-document.getElementById('excelInput').addEventListener('change', e => {
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = function(e2) {
-    const workbook = XLSX.read(e2.target.result, { type: 'binary' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
-    let [header,...dataRows] = rows.filter(r=>r.some(n=>n));
-    const idx = key => header.findIndex(h=> (h||'').toLowerCase().includes(key));
-    vaultRows = dataRows.map(row => ({
-      Campus: row[idx('campus')] || '',
-      Building: row[idx('building')] || '',
-      'Vault ID': row[idx('vault')] || row[idx('id')] || '',
-      Category: row[idx('category')] || '',
-      Progress: row[idx('progress')] || row[idx('status')] || 'Not Started',
-      Notes: row[idx('notes')] || ''
-    })).filter(r => r['Vault ID']);
-    refreshFilters();
-    renderVaultTable();
-    renderDashboard(); // update Dashboard stats
-  };
-  reader.readAsBinaryString(file);
-});
-document.getElementById('addVaultBtn').addEventListener('click', () => {
-  vaultRows.unshift({
-    Campus:'',Building:'','Vault ID':'',Category:'',Progress:'Not Started',Notes:''
-  });
-  renderVaultTable();
-  refreshFilters();
-});
-window.handleProgressChange = (idx, val) => {
-  vaultRows[idx].Progress = val;
-  renderVaultTable();
-  renderDashboard();
-};
-window.handleNotesChange = (idx, val) => {
-  vaultRows[idx].Notes = val;
-};
-
-/// --- Damage Report Table ---
-let damageRows = [];
-function renderDamageTable() {
-  const container = document.getElementById('damageTableContainer');
-  if(!container) return;
-  let reported = damageRows.length;
-  let open = damageRows.filter(r=>!r.Resolved).length;
-  document.getElementById('damageStats').textContent = `${reported} reported / ${open} open`;
-  if(!damageRows.length) {
-    container.innerHTML = '<div style="color:#bbb;padding:18px;">No damages reported yet.</div>';
-    return;
-  }
-  let html = `<table><thead>
-    <tr>
-      <th>Type</th><th>Location</th><th>Date</th><th>Status</th><th>Action</th><th>Notes</th>
-    </tr></thead><tbody>`;
-  html += damageRows.map((row, idx) =>
-    `<tr>
-      <td>${row.Type || ''}</td>
-      <td>${row.Location || ''}</td>
-      <td>${row.Date || ''}</td>
-      <td>
-        <span class="damage-status">${row.Resolved?'Resolved':'Open'}</span>
-      </td>
-      <td>
-        <button class="add-btn small" onclick="window.toggleResolved(${idx})">${row.Resolved?'Reopen':'Resolve'}</button>
-        <button class="add-btn small" style="background:#aaa;" onclick="window.removeDamage(${idx})">Remove</button>
-      </td>
-      <td>
-        <input class="table-input" type="text" value="${row.Notes||''}" onchange="window.handleDamageNotes(${idx}, this.value)" />
-      </td>
-    </tr>`
-  ).join('');
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-window.toggleResolved = (idx) => {
-  damageRows[idx].Resolved = !damageRows[idx].Resolved;
-  renderDamageTable();
-  renderDashboard();
-};
-window.removeDamage = (idx) => {
-  damageRows.splice(idx,1);
-  renderDamageTable();
-  renderDashboard();
-};
-window.handleDamageNotes = (idx, val) => {
-  damageRows[idx].Notes = val;
-};
-// Add new damage
-document.getElementById('addDamageBtn').addEventListener('click', () => {
-  const type = document.getElementById('damageTypeInput').value.trim();
-  const loc = document.getElementById('damageLocationInput').value.trim();
-  if(type && loc) {
-    damageRows.unshift({
-      Type: type, Location: loc, Date: new Date().toLocaleDateString(), Resolved: false, Notes: ''
-    });
-    document.getElementById('damageTypeInput').value = '';
-    document.getElementById('damageLocationInput').value = '';
-    renderDamageTable();
-    renderDashboard();
-  }
-});
-
-/// --- Schedules Table ---
-let scheduleRows = [];
-function renderScheduleTable() {
-  const container = document.getElementById('scheduleTableContainer');
-  if(!container) return;
-  let total = scheduleRows.length;
-  let complete = scheduleRows.filter(r=>r.Done).length;
-  document.getElementById('scheduleStats').textContent = `${complete} complete / ${total} scheduled`;
-  if(!scheduleRows.length) {
-    container.innerHTML = '<div style="color:#bbb;padding:18px;">No scheduled tasks.</div>';
-    return;
-  }
-  let html = `<table><thead>
-    <tr>
-      <th>Task</th><th>Date</th><th>Status</th><th>Action</th><th>Notes</th>
-    </tr></thead><tbody>`;
-  html += scheduleRows.map((row, idx) =>
-    `<tr>
-      <td>${row.Task || ''}</td>
-      <td>${row.Date || ''}</td>
-      <td>
-        <span class="schedule-status">${row.Done?'Done':'Pending'}</span>
-      </td>
-      <td>
-        <button class="add-btn small" onclick="window.toggleDone(${idx})">${row.Done?'Undo':'Mark Done'}</button>
-        <button class="add-btn small" style="background:#aaa;" onclick="window.removeSchedule(${idx})">Remove</button>
-      </td>
-      <td>
-        <input class="table-input" type="text" value="${row.Notes||''}" onchange="window.handleScheduleNotes(${idx}, this.value)" />
-      </td>
-    </tr>`
-  ).join('');
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-window.toggleDone = (idx) => {
-  scheduleRows[idx].Done = !scheduleRows[idx].Done;
-  renderScheduleTable();
-  renderDashboard();
-};
-window.removeSchedule = (idx) => {
-  scheduleRows.splice(idx,1);
-  renderScheduleTable();
-  renderDashboard();
-};
-window.handleScheduleNotes = (idx, val) => {
-  scheduleRows[idx].Notes = val;
-};
-// Add new schedule item
-document.getElementById('addScheduleBtn').addEventListener('click', () => {
-  const task = document.getElementById('scheduleTaskInput').value.trim();
-  const date = document.getElementById('scheduleDateInput').value;
-  if(task && date) {
-    scheduleRows.unshift({
-      Task: task, Date: date, Done: false, Notes: ''
-    });
-    document.getElementById('scheduleTaskInput').value = '';
-    document.getElementById('scheduleDateInput').value = '';
-    renderScheduleTable();
-    renderDashboard();
-  }
-});
-
-/// --- Dashboard Analytics ---
-function renderDashboard() {
-  const vaultCount = vaultRows.length;
-  const vaultOver = vaultRows.filter(v=>v.Progress==='Turned Over').length;
-  const damageOpen = damageRows.filter(d=>!d.Resolved).length;
-  const damageResolved = damageRows.filter(d=>!!d.Resolved).length;
-  const schedulesTotal = scheduleRows.length;
-  const scheduleComplete = scheduleRows.filter(s=>s.Done).length;
-  let html = `<div style="display:flex; gap:32px; flex-wrap:wrap; padding-bottom:24px;">
-    <div style="background:#fff3f3;color:#e62429;padding:18px 34px;border-radius:13px;min-width:190px;">
-      <div style="font-size:1.2em; font-weight:bold;">Vaults Tracked</div>
-      <div style="font-size:2em; font-weight:bold;">${vaultCount}</div>
-      <div>${vaultOver} Turned Over</div>
+  <!-- Vault Modal -->
+  <div id="vaultModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button id="modalCloseBtn" style="float:right;">×</button>
+      <h3 id="modalTitle">Add/Edit Vault Entry</h3>
+      <form id="vaultForm">
+        <label>Campus:<input id="vCampus" required /></label><br />
+        <label>Building:<input id="vBuilding" required /></label><br />
+        <label>Vault ID:<input id="vVaultId" required /></label><br />
+        <label>Status:<input id="vStatus" /></label>
+        <label>Turnover Date:<input id="vTurnoverDate" type="date" /></label>
+        <br />
+        <label>Attachment:<input id="vAttachmentInput" type="file" accept="image/*,application/pdf" /></label>
+        <br />
+        <button type="button" id="vCapturePhotoBtn">Capture Photo</button>
+        <img id="vPhotoPreview" style="display:none;max-width:200px;" />
+        <br />
+        <button type="submit">Save Vault</button>
+      </form>
     </div>
-    <div style="background:#e3ffd1;color:#4caf50;padding:18px 34px;border-radius:13px;min-width:190px;">
-      <div style="font-size:1.2em; font-weight:bold;">Damage Reports</div>
-      <div style="font-size:2em; font-weight:bold;">${damageOpen}</div>
-      <div>${damageResolved} Resolved</div>
+  </div>
+
+  <!-- Damage Modal -->
+  <div id="damageModal" class="modal" style="display:none;">
+    <div class="modal-content">
+      <button id="damageModalCloseBtn" style="float:right;">×</button>
+      <h3 id="damageModalTitle">Report Vault Damage</h3>
+      <form id="damageForm">
+        <label>Campus:<input id="dCampus" required /></label><br />
+        <label>Building:<input id="dBuilding" required /></label><br />
+        <label>Vault ID:<input id="dVaultId" required /></label><br />
+        <label>Category:
+          <select id="dCategory">
+            <option value="">Select...</option>
+            <option value="telecom">Telecom</option>
+            <option value="electrical">Electrical</option>
+            <option value="water">Water</option>
+            <option value="other">Other</option>
+          </select>
+        </label>
+        <label>Status:
+          <select id="dStatus">
+            <option value="">Select...</option>
+            <option value="new">New/Not Started</option>
+            <option value="in_progress">In Progress</option>
+            <option value="fixed">Fixed/Turned Over</option>
+          </select>
+        </label>
+        <label>Progress:<input id="dProgress" /></label>
+        <label>Description:<textarea id="dDescription"></textarea></label>
+        <br />
+        <label>Attachment:<input id="dAttachmentInput" type="file" accept="image/*,video/*,application/pdf" /></label>
+        <br />
+        <button type="button" id="dCapturePhotoBtn">Capture Photo/Video</button>
+        <img id="dPhotoPreview" style="display:none;max-width:200px;" />
+        <video id="dVideoPreview" style="display:none;max-width:200px;" controls></video>
+        <br />
+        <button type="submit">Save Damage Report</button>
+      </form>
     </div>
-    <div style="background:#f3f6ff;color:#1565c0;padding:18px 34px;border-radius:13px;min-width:190px;">
-      <div style="font-size:1.2em; font-weight:bold;">Schedules</div>
-      <div style="font-size:2em; font-weight:bold;">${schedulesTotal}</div>
-      <div>${scheduleComplete} Completed</div>
-    </div>
-  </div>`;
-  document.getElementById('dashboard-stats').innerHTML = html;
-}
-renderDashboard();
-renderVaultTable();
-renderDamageTable();
-renderScheduleTable();
-  </script>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.17.5/dist/xlsx.full.min.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
