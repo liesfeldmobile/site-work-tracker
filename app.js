@@ -30,6 +30,78 @@ function save() {
   localStorage.setItem("vaults", JSON.stringify(state.vaults));
 }
 
+// --- Login/Register Logic ---
+function renderLogin() {
+  renderNavTabs(null);
+  $("#main").innerHTML = `
+    <div class="page">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <input type="text" name="username" placeholder="Username" required autofocus />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+        <button type="button" id="showRegister">Register</button>
+      </form>
+      <div id="loginError" class="error-div"></div>
+    </div>
+  `;
+  $("#loginForm").onsubmit = function(e) {
+    e.preventDefault();
+    const username = this.username.value.trim();
+    const password = this.password.value;
+    const user = state.users.find(u => u.username === username && u.password === password);
+    if (user) {
+      state.user = user;
+      save();
+      feedback("Logged in!", "success");
+      go('dashboard');
+    } else {
+      $("#loginError").innerText = "Invalid credentials.";
+      feedback("Login failed!", "error");
+    }
+  };
+  $("#showRegister").onclick = () => go('register');
+}
+function renderRegister() {
+  renderNavTabs(null);
+  $("#main").innerHTML = `
+    <div class="page">
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input type="text" name="username" placeholder="Username" required />
+        <input type="password" name="password" placeholder="Password" required />
+        <select name="role">
+          <option value="field">Field Worker</option>
+          <option value="admin">Admin</option>
+        </select>
+        <button type="submit">Register</button>
+        <button type="button" id="showLogin">Back</button>
+      </form>
+      <div id="registerError" class="error-div"></div>
+    </div>
+  `;
+  $("#registerForm").onsubmit = function(e) {
+    e.preventDefault();
+    const username = this.username.value.trim();
+    const password = this.password.value;
+    const role = this.role.value;
+    if (!username || !password) {
+      $("#registerError").innerText = "Fill all fields.";
+      return;
+    }
+    if (state.users.some(u => u.username === username)) {
+      $("#registerError").innerText = "Username already exists.";
+      feedback("Registration failed!", "error");
+      return;
+    }
+    state.users.push({ username, password, role });
+    save();
+    feedback("Registered!", "success");
+    go('login');
+  };
+  $("#showLogin").onclick = () => go('login');
+}
+
 // --- Routing and Navigation ---
 function route(page) {
   if (page === "login") renderLogin();
@@ -215,7 +287,4 @@ function renderDamageReports() {
   renderNavTabs("damage");
   $("#main").innerHTML = `<h2>Damage Reports</h2><div>Reports coming soon.</div>`;
 }
-
-// --- Login/Register Logic (not changed here, keep as-is except call renderNavTabs(null) if needed) ---
-// ... (rest of login/register logic follows)
 
