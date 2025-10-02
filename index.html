@@ -1,26 +1,35 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Site Work Tracker</title>
-  <meta name="theme-color" content="#2d6cdf">
-  <link rel="manifest" href="manifest.json" />
-  <link rel="stylesheet" href="styles.css" />
-  <link rel="icon" href="favicon.ico" type="image/x-icon" />
-</head>
-<body>
-  <nav>
-    <img src="logo.png" alt="Site Work Tracker logo" class="logo-nav" />
-    <span class="nav-title">Site Work Tracker</span>
-    <div class="nav-right">
-      <span id="userWelcome"></span>
-      <button id="themeToggle" title="Toggle Light/Dark Mode">🌘</button>
-    </div>
-  </nav>
-  <div id="main"></div>
-  <div id="toast"></div>
-  <script src="vaults_data_combined.js"></script>
-  <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Site Work Tracker</title>
+    <meta name="theme-color" content="#2d6cdf" />
+    <meta name="description" content="Progressive Web App to track vault damage and utility schedules" />
+    <meta name="application-name" content="Site Work Tracker" />
+    <!-- PWA/SEO enhancements -->
+    <meta property="og:title" content="Site Work Tracker">
+    <meta property="og:description" content="Track vault damage and site schedules on any device.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://site-work-tracker.vercel.app">
+    <meta name="twitter:card" content="summary">
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="favicon.ico" type="image/x-icon" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <nav>
+      <img src="logo.png" alt="Site Work Tracker logo" class="logo-nav" />
+      <span class="nav-title">Site Work Tracker</span>
+      <div class="nav-right">
+        <span id="userWelcome" aria-live="polite"></span>
+        <button id="themeToggle" title="Toggle Light/Dark Mode" aria-label="Toggle theme"></button>
+      </div>
+    </nav>
+    <div id="main"></div>
+    <div id="toast" class="toast" style="display:none;"></div>
+    <!-- order: vaults before app for data declarations -->
+    <script src="vaults_data_combined.js"></script>
+    <script src="app.js"></script>
+  </body>
 </html>

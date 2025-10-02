@@ -1,3 +1,4 @@
+// --- Storage Initialization for Vaults and Users ---
 if (!localStorage.getItem("vaults") && window.DEFAULT_VAULTS) {
   localStorage.setItem("vaults", JSON.stringify(window.DEFAULT_VAULTS));
 }
@@ -10,340 +11,389 @@ if (!localStorage.getItem("users")) {
     ])
   );
 }
+
+// --- Global State and Helper ---
 const state = {
   user: null,
   users: JSON.parse(localStorage.getItem("users") || "[]"),
   reports: JSON.parse(localStorage.getItem("reports") || "[]"),
   vaults: JSON.parse(localStorage.getItem("vaults") || "[]"),
-  filter: { vaults:"", reports:"", reportStatus:"", reportCategory:"" }
+  filter: { vaults: "", reports: "", reportStatus: "", reportCategory: "" }
 };
+
 const $ = (sel) => document.querySelector(sel);
+
+// --- Persist Data ---
 function save() {
   localStorage.setItem("users", JSON.stringify(state.users));
   localStorage.setItem("reports", JSON.stringify(state.reports));
   localStorage.setItem("vaults", JSON.stringify(state.vaults));
 }
-function route(page) { if (page === "login") renderLogin(); else if (page === "register") renderRegister();
-  else if (!state.user) renderLogin(); else if (page==="dashboard"||!page) renderDashboard();
-  else if (page==="vault") renderVaultTracker(); else if (page==="damage") renderDamageReports();
+
+// --- Routing and Main Dispatcher ---
+function route(page) {
+  if (page === "login") renderLogin();
+  else if (page === "register") renderRegister();
+  else if (!state.user) renderLogin();
+  else if (page === "dashboard" || !page) renderDashboard();
+  else if (page === "vault") renderVaultTracker();
+  else if (page === "damage") renderDamageReports();
+  // add other routing if needed
 }
-window.addEventListener("popstate", () => { route(location.hash?.substring(1) || "dashboard"); });
-window.addEventListener("DOMContentLoaded", () => { route(location.hash?.substring(1) || "dashboard"); });
-function go(page) { history.pushState({}, "", "#" + page); route(page); }
+window.addEventListener("popstate", () => {
+  route(location.hash?.substring(1) || "dashboard");
+});
+window.addEventListener("DOMContentLoaded", () => {
+  route(location.hash?.substring(1) || "dashboard");
+});
+
+function go(page) {
+  history.pushState({}, "", "#" + page);
+  route(page);
+}
+
+// --- Feedback Toast Utility ---
 function feedback(msg, type = "success") {
-  $("#feedback").innerHTML = `<div class="feedback ${type}">${msg}</div>`;
-  setTimeout(() => { if ($("#feedback")) $("#feedback").innerHTML = ""; }, 3000);
+  const el = $("#toast");
+  if (!el) return;
+  el.innerText = msg;
+  el.className = type; // Allows CSS: .success, .error, etc.
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 3200);
 }
 
-// --- AUTH ---
-
+// --- User Authentication (Login/Register/Logout) ---
 function renderLogin() {
   $("#main").innerHTML = `
-    <div class="center-box">
-    <h2>Login</h2>
-    <form id="loginForm">
-      <label>Username <input required name="username"></label>
-      <label>Password <input required name="password" type="password"></label>
-      <button type="submit">Login</button>
-      <div id="loginMsg"></div>
-    </form>
-    <button class="secondary" onclick="go('register')">Register</button>
+    <div class="page">
+      <h2>Login</h2>
+      <form id="loginForm">
+        <input type="text" name="username" placeholder="Username" required autofocus />
+        <input type="password" name="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+        <button type="button" id="showRegister">Register</button>
+      </form>
+      <div id="loginError" class="error"></div>
     </div>
-    <div id="feedback"></div>
   `;
-  $("#loginForm").onsubmit = (e) => {
+  $("#loginForm").onsubmit = function(e) {
     e.preventDefault();
-    const { username, password } = Object.fromEntries(new FormData(e.target));
-    const user = state.users.find((u) => u.username === username && u.password === password);
-    if (!user) return ($("#loginMsg").textContent = "Invalid login");
-    state.user = user;
-    feedback("Login successful!");
-    go("dashboard");
+    const username = this.username.value.trim();
+    const password = this.password.value;
+    const user = state.users.find(u => u.username === username && u.password === password);
+    if (user) {
+      state.user = user;
+      feedback("Logged in!", "success");
+      go("dashboard");
+      save();
+    } else {
+      $("#loginError").innerText = "Invalid credentials.";
+      feedback("Login failed!", "error");
+    }
   };
+  $("#showRegister").onclick = () => go("register");
 }
+
 function renderRegister() {
   $("#main").innerHTML = `
-    <div class="center-box">
-    <h2>Register</h2>
-    <form id="registerForm">
-      <label>Username <input required name="username"></label>
-      <label>Password <input required name="password" type="password"></label>
-      <label>Role
+    <div class="page">
+      <h2>Register</h2>
+      <form id="registerForm">
+        <input type="text" name="username" placeholder="Username" required />
+        <input type="password" name="password" placeholder="Password" required />
         <select name="role">
           <option value="field">Field Worker</option>
           <option value="admin">Admin</option>
         </select>
-      </label>
-      <button type="submit">Create Account</button>
-      <div id="registerError"></div>
-    </form>
-    <button class="secondary" onclick="go('login')">Back to Login</button>
+        <button type="submit">Register</button>
+        <button type="button" id="showLogin">Back</button>
+      </form>
+      <div id="registerError" class="error"></div>
     </div>
-    <div id="feedback"></div>
   `;
-  $("#registerForm").onsubmit = (e) => {
+  $("#registerForm").onsubmit = function(e) {
     e.preventDefault();
-    const { username, password, role } = Object.fromEntries(new FormData(e.target));
-    if (state.users.find((u) => u.username === username)) {
-      $("#registerError").textContent = "Username already taken!";
+    const username = this.username.value.trim();
+    const password = this.password.value;
+    const role = this.role.value;
+    if (!username || !password) {
+      $("#registerError").innerText = "Fill all fields.";
       return;
     }
-    state.users.push({ username, password, role });
+    if (state.users.some(u => u.username === username)) {
+      $("#registerError").innerText = "Username already exists.";
+      feedback("Registration failed!", "error");
+      return;
+    }
+    const newUser = { username, password, role };
+    state.users.push(newUser);
     save();
-    feedback("Registration successful! Please log in.");
+    feedback("Registered!", "success");
     go("login");
   };
+  $("#showLogin").onclick = () => go("login");
 }
 
-// --- DASHBOARD ---
+// --- Dashboard Rendering ---
 function renderDashboard() {
-  const openDamages = state.reports.filter(r => r.status === "New/Not Started").length;
+  const userReports = state.reports.filter(r => r.author === state.user.username || state.user.role === "admin");
+  const userVaults = state.vaults;
   $("#main").innerHTML = `
-    <h2>Welcome, ${state.user.username} <span class="badge badge-${state.user.role}">${state.user.role}</span></h2>
-    <div class="action-bar">
-      <button onclick="go('vault')">Vault Tracker</button>
-      <button onclick="go('damage')">Damage Reports</button>
+    <div class="page">
+      <h2>Site Work Tracker</h2>
+      <p>Welcome, <strong>${state.user.username}</strong> (${state.user.role})</p>
+      <div class="dashboard-cards">
+        <div class="card">
+          <h3>Vault Tracker</h3>
+          <p>${userVaults.length} vaults</p>
+          <button onclick="go('vault')">View Vaults</button>
+        </div>
+        <div class="card">
+          <h3>Damage Reports</h3>
+          <p>${userReports.length} reports</p>
+          <button onclick="go('damage')">View Reports</button>
+        </div>
+        <div class="card">
+          <h3>Add Damage</h3>
+          <button onclick="go('damage')">Add Incident</button>
+        </div>
+      </div>
       <button onclick="logout()">Logout</button>
     </div>
-    <div class="dashboard-grid">
-      <div class="card">
-        <div class="card-title">Total Vaults</div>
-        <div class="card-value">${state.vaults.length}</div>
-      </div>
-      <div class="card">
-        <div class="card-title">Damage Reports</div>
-        <div class="card-value">${state.reports.length}</div>
-      </div>
-      <div class="card card-warning">
-        <div class="card-title">Open Damages</div>
-        <div class="card-value">${openDamages}</div>
-      </div>
-    </div>
-    <div>
-      <h3>Recent Reports</h3>
-      <ul>
-        ${state.reports.slice(-5).reverse().map(r=>`<li>
-          <b>${r.vaultId}</b> (${r.status}) - <small>${r.category}</small> 
-          <span style="color:#999; font-size:0.9em;">by ${r.author||'-'}</span>
-        </li>`).join("") || "<li>No reports yet.</li>"}
-      </ul>
-    </div>
-    <div>
-      <button class="danger" onclick="if(confirm('Reset all demo data?')){ resetDemo(); }">Reset Demo Data</button>
-    </div>
-    <div id="feedback"></div>
   `;
 }
-window.resetDemo = function() {
-  if(window.DEFAULT_VAULTS) localStorage.setItem("vaults", JSON.stringify(window.DEFAULT_VAULTS));
-  else localStorage.removeItem("vaults"); localStorage.removeItem("reports");
-  feedback("Demo data reset!"); location.reload();
-}
-function logout() { state.user = null; go("login"); }
 
-// --- VAULT TRACKER ---
+// --- Vault Tracker Rendering ---
 function renderVaultTracker() {
+  // Apply vault filters
+  let vaults = state.vaults.filter(vault => {
+    let matchCampus = state.filter.vaults ? (vault.campus && vault.campus.toLowerCase().includes(state.filter.vaults.toLowerCase())) : true;
+    return matchCampus;
+  });
   $("#main").innerHTML = `
-    <h2>Vault Tracker</h2>
-    <div class="action-bar">
+    <div class="page">
+      <h2>Vault Tracker</h2>
+      <input type="search" id="vaultFilter" placeholder="Filter by campus..." value="${state.filter.vaults}" />
+      <table>
+        <thead>
+          <tr>
+            <th>Campus</th><th>Building</th><th>Vault ID</th><th>Category</th><th>Status</th><th>Turnover</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${vaults.map((v, idx)=>`
+            <tr>
+              <td>${v.campus}</td>
+              <td>${v.building}</td>
+              <td>${v.vaultId}</td>
+              <td>${v.category||""}</td>
+              <td>${v.status||""}</td>
+              <td>${v.turnover||""}</td>
+              <td>
+                ${state.user.role==="admin"?`<button onclick="editVault(${idx})">Edit</button> <button onclick="deleteVault(${idx})">Delete</button>`:""}
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
       <button onclick="go('dashboard')">Back</button>
-      <button onclick="showVaultForm()">Add Vault Entry</button>
-      <input class="search" placeholder="Search vaults" oninput="vaultSearch(this.value)">
-    </div>
-    <div id="vaultTableContainer">
-      ${renderVaultTable()}
-    </div>
-    <div id="modal"></div>
-    <div id="feedback"></div>
-  `;
-}
-window.vaultSearch = function(q) {
-  state.filter.vaults = q.trim().toLowerCase();
-  renderVaultTracker();
-}
-function renderVaultTable() {
-  let vaults = state.vaults;
-  if (state.filter.vaults)
-    vaults = vaults.filter(v => Object.values(v).join(" ").toLowerCase().includes(state.filter.vaults));
-  if (!vaults.length)
-    return `<div>No vaults found. <a href="#" onclick="resetDemo();return false;">Restore default vaults?</a></div>`;
-  return `
-    <table>
-      <thead>
-      <tr>
-        <th>Campus</th><th>Building</th><th>Vault ID</th><th>Category</th><th>Status</th><th>Turnover</th><th>Actions</th>
-      </tr>
-      </thead>
-      <tbody>
-      ${vaults.map((v,i)=>`<tr>
-        <td>${v.campus}</td>
-        <td>${v.building}</td>
-        <td>${v.vaultId}</td>
-        <td>${v.category||""}</td>
-        <td>${v.status||""}</td>
-        <td>${v.turnover||""}</td>
-        <td>${state.user.role==="admin"?`
-            <button onclick="editVault(${i})">Edit</button>
-            <button onclick="deleteVault(${i})">Delete</button>
-            `:""}
-        </td>
-      </tr>`).join("")}
-      </tbody>
-    </table>
-    <div>Showing ${vaults.length} vault(s).</div>
-  `;
-}
-window.editVault = function(i) { showVaultForm(state.vaults[i],i); }
-window.deleteVault = function(i) {
-  if (confirm("Delete this vault entry?")) {
-    state.vaults.splice(i,1); save(); renderVaultTracker();
-    feedback("Vault entry deleted", "success");
-  }
-}
-window.showVaultForm = function(v={},idx) {
-  $("#modal").innerHTML = `
-    <div class="modal">
-      <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <form id="vaultForm">
-          <label>Campus <input name="campus" required value="${v.campus||""}"></label>
-          <label>Building <input name="building" required value="${v.building||""}"></label>
-          <label>Vault ID <input name="vaultId" required value="${v.vaultId||""}"></label>
-          <label>Category <input name="category" value="${v.category||""}"></label>
-          <label>Status <input name="status" value="${v.status||""}"></label>
-          <label>Turnover Date <input name="turnover" type="date" value="${v.turnover||""}"></label>
-          <button type="submit">${idx!=null?"Update":"Add"}</button>
-        </form>
-      </div>
     </div>
   `;
-  $("#vaultForm").onsubmit = (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.target));
-    if(idx!=null) state.vaults[idx] = {...state.vaults[idx], ...data};
-    else state.vaults.push(data);
-    save(); closeModal(); renderVaultTracker();
-    feedback("Vault entry saved.", "success");
+  $("#vaultFilter").oninput = function() {
+    state.filter.vaults = this.value;
+    renderVaultTracker();
   };
 }
-window.closeModal = function() { $("#modal").innerHTML = ""; }
 
-// --- DAMAGE REPORTS ---
+window.editVault = function(idx) {
+  const v = state.vaults[idx];
+  $("#main").innerHTML = `
+    <div class="page">
+      <h2>Edit Vault</h2>
+      <form id="editVaultForm">
+        <input type="text" name="campus" value="${v.campus}" required />
+        <input type="text" name="building" value="${v.building}" required />
+        <input type="text" name="vaultId" value="${v.vaultId}" required />
+        <input type="text" name="category" value="${v.category||""}" />
+        <input type="text" name="status" value="${v.status||""}" />
+        <input type="text" name="turnover" value="${v.turnover||""}" />
+        <button type="submit">Save</button>
+        <button type="button" onclick="go('vault')">Cancel</button>
+      </form>
+    </div>
+  `;
+  $("#editVaultForm").onsubmit = function(e) {
+    e.preventDefault();
+    v.campus = this.campus.value;
+    v.building = this.building.value;
+    v.vaultId = this.vaultId.value;
+    v.category = this.category.value;
+    v.status = this.status.value;
+    v.turnover = this.turnover.value;
+    save();
+    feedback("Vault updated!", "success");
+    go("vault");
+  };
+};
+
+window.deleteVault = function(idx) {
+  if (confirm("Delete this vault?")) {
+    state.vaults.splice(idx, 1);
+    save();
+    feedback("Vault deleted!", "success");
+    go("vault");
+  }
+};
+
+// --- Damage Reports Rendering ---
 function renderDamageReports() {
+  let reports = state.reports.filter(report => {
+    let matchCampus = state.filter.reports ? (report.campus && report.campus.toLowerCase().includes(state.filter.reports.toLowerCase())) : true;
+    let matchStatus = state.filter.reportStatus ? (report.status && report.status === state.filter.reportStatus) : true;
+    let matchCategory = state.filter.reportCategory ? (report.category && report.category === state.filter.reportCategory) : true;
+    return matchCampus && matchStatus && matchCategory;
+  });
   $("#main").innerHTML = `
-    <h2>Damage Reports</h2>
-    <div class="action-bar">
+    <div class="page">
+      <h2>Damage Reports</h2>
+      <input type="search" id="reportFilter" placeholder="Filter by campus..." value="${state.filter.reports}" />
+      <button id="showAddReport">Add Damage Report</button>
+      <table>
+        <thead>
+          <tr>
+            <th>Campus</th><th>Building</th><th>Vault ID</th><th>Category</th><th>Status</th><th>Progress</th><th>Description</th><th>By</th><th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${reports.map((r, idx)=>`
+            <tr>
+              <td>${r.campus}</td>
+              <td>${r.building}</td>
+              <td>${r.vaultId}</td>
+              <td>${r.category}</td>
+              <td>${r.status||""}</td>
+              <td>${r.progress||""}</td>
+              <td>${r.desc}</td>
+              <td>${r.author||""}</td>
+              <td>${(state.user.username === r.author || state.user.role === "admin") ?
+                  `<button onclick="editReport(${idx})">Edit</button> <button onclick="deleteReport(${idx})">Delete</button>`
+                  : ""}
+              </td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
       <button onclick="go('dashboard')">Back</button>
-      <button onclick="showReportForm()">Add Damage Report</button>
-      <input class="search" placeholder="Search reports" oninput="reportSearch(this.value)">
-      <select onchange="filterReportStatus(this.value)">
-        <option value="">All Statuses</option>
-        <option>New/Not Started</option>
-        <option>In Progress</option>
-        <option>Fixed/Turned Over</option>
-      </select>
-      <select onchange="filterReportCategory(this.value)">
-        <option value="">All Categories</option>
-        <option>Telecom</option>
-        <option>Electrical</option>
-        <option>Water</option>
-        <option>Other</option>
-      </select>
-    </div>
-    <div id="damageTableContainer">
-      ${renderDamageTable()}
-    </div>
-    <div id="modal"></div>
-    <div id="feedback"></div>
-  `;
-}
-window.reportSearch = function(q) { state.filter.reports = q.trim().toLowerCase(); renderDamageReports(); }
-window.filterReportStatus = function(val) { state.filter.reportStatus = val; renderDamageReports(); }
-window.filterReportCategory = function(val) { state.filter.reportCategory = val; renderDamageReports(); }
-
-function renderDamageTable() {
-  let reports = state.reports;
-  if (state.filter.reports)
-    reports = reports.filter(r => Object.values(r).join(" ").toLowerCase().includes(state.filter.reports));
-  if (state.filter.reportStatus)
-    reports = reports.filter(r => r.status === state.filter.reportStatus);
-  if (state.filter.reportCategory)
-    reports = reports.filter(r => r.category === state.filter.reportCategory);
-  if (!reports.length)
-    return `<div>No damage reports. <a href="#" onclick="showReportForm();return false;">Add one?</a></div>`;
-  return `
-    <table>
-      <thead>
-      <tr>
-        <th>Campus</th><th>Building</th><th>Vault ID</th><th>Category</th>
-        <th>Status</th><th>Progress</th><th>Description</th><th>By</th><th>Actions</th>
-      </tr>
-      </thead>
-      <tbody>
-      ${reports.map((r,i)=>`<tr>
-        <td>${r.campus}</td>
-        <td>${r.building}</td>
-        <td>${r.vaultId}</td>
-        <td>${r.category}</td>
-        <td>${r.status}</td>
-        <td>${r.progress}</td>
-        <td>${r.desc}</td>
-        <td>${r.author||""}</td>
-        <td>
-          ${(state.user.username === r.author || state.user.role === "admin")
-            ? `<button onclick="deleteReport(${i})">Delete</button>`
-            : ""}
-        </td>
-      </tr>`).join("")}
-      </tbody>
-    </table>
-    <div>Showing ${reports.length} report(s).</div>
-  `;
-}
-window.deleteReport = function(i) {
-  if (confirm("Delete this report?")) {
-    state.reports.splice(i,1); save(); renderDamageReports();
-    feedback("Report deleted.", "success");
-  }
-}
-window.showReportForm = function(r={},idx) {
-  $("#modal").innerHTML = `
-    <div class="modal">
-      <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <form id="damageForm">
-          <label>Campus <input name="campus" required value="${r.campus||""}"></label>
-          <label>Building <input name="building" required value="${r.building||""}"></label>
-          <label>Vault ID <input name="vaultId" required value="${r.vaultId||""}"></label>
-          <label>Category
-            <select name="category">
-              <option>Telecom</option>
-              <option>Electrical</option>
-              <option>Water</option>
-              <option>Other</option>
-            </select>
-          </label>
-          <label>Status
-            <select name="status">
-              <option>New/Not Started</option>
-              <option>In Progress</option>
-              <option>Fixed/Turned Over</option>
-            </select>
-          </label>
-          <label>Progress <input name="progress" value="${r.progress||""}"></label>
-          <label>Description <textarea name="desc">${r.desc||""}</textarea></label>
-          <button type="submit">${idx!=null?"Update":"Add"}</button>
-        </form>
-      </div>
     </div>
   `;
-  $("#damageForm").onsubmit = (e) => {
-    e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.target));
-    data.author = state.user.username;
-    if(idx!=null) state.reports[idx] = data;
-    else state.reports.push(data);
-    save(); closeModal(); renderDamageReports();
-    feedback("Report saved.", "success");
+  $("#reportFilter").oninput = function() {
+    state.filter.reports = this.value;
+    renderDamageReports();
+  };
+  $("#showAddReport").onclick = function() {
+    addDamageReport();
   };
 }
+
+window.editReport = function(idx) {
+  const r = state.reports[idx];
+  $("#main").innerHTML = `
+    <div class="page">
+      <h2>Edit Damage Report</h2>
+      <form id="editReportForm">
+        <input type="text" name="campus" value="${r.campus}" required />
+        <input type="text" name="building" value="${r.building}" required />
+        <input type="text" name="vaultId" value="${r.vaultId}" required />
+        <input type="text" name="category" value="${r.category}" />
+        <input type="text" name="status" value="${r.status||""}" />
+        <input type="text" name="progress" value="${r.progress||""}" />
+        <textarea name="desc" required>${r.desc}</textarea>
+        <button type="submit">Save</button>
+        <button type="button" onclick="go('damage')">Cancel</button>
+      </form>
+    </div>
+  `;
+  $("#editReportForm").onsubmit = function(e) {
+    e.preventDefault();
+    r.campus = this.campus.value;
+    r.building = this.building.value;
+    r.vaultId = this.vaultId.value;
+    r.category = this.category.value;
+    r.status = this.status.value;
+    r.progress = this.progress.value;
+    r.desc = this.desc.value;
+    save();
+    feedback("Report updated!", "success");
+    go("damage");
+  };
+};
+
+window.deleteReport = function(idx) {
+  if (confirm("Delete this damage report?")) {
+    state.reports.splice(idx, 1);
+    save();
+    feedback("Report deleted!", "success");
+    go("damage");
+  }
+};
+
+// --- Add Damage Report Modal/Form ---
+function addDamageReport() {
+  $("#main").innerHTML = `
+    <div class="page">
+      <h2>New Damage Report</h2>
+      <form id="damageForm">
+        <input type="text" name="campus" placeholder="Campus" required />
+        <input type="text" name="building" placeholder="Building" required />
+        <input type="text" name="vaultId" placeholder="Vault ID" required />
+        <input type="text" name="category" placeholder="Category" />
+        <input type="text" name="status" placeholder="Status" />
+        <input type="text" name="progress" placeholder="Progress" />
+        <textarea name="desc" placeholder="Description" required></textarea>
+        <button type="submit">Add</button>
+        <button type="button" onclick="go('damage')">Cancel</button>
+      </form>
+      <div id="damageError" class="error"></div>
+    </div>
+  `;
+  $("#damageForm").onsubmit = function(e) {
+    e.preventDefault();
+    const campus = this.campus.value;
+    const building = this.building.value;
+    const vaultId = this.vaultId.value;
+    const category = this.category.value;
+    const status = this.status.value;
+    const progress = this.progress.value;
+    const desc = this.desc.value;
+    if (!campus || !building || !vaultId || !desc) {
+      $("#damageError").innerText = "Fill all required fields.";
+      feedback("Form incomplete.", "error");
+      return;
+    }
+    state.reports.push({
+      campus,
+      building,
+      vaultId,
+      category,
+      status,
+      progress,
+      desc,
+      author: state.user.username
+    });
+    save();
+    feedback("Report added!", "success");
+    go("damage");
+  }
+}
+
+// --- Logout function ---
+function logout() {
+  state.user = null;
+  save();
+  feedback("Logged out.", "success");
+  go("login");
+}
+
+// --- Expose navigation globally ---
+window.go = go;
+
