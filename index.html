@@ -2,223 +2,199 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Vault Turnover Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Work Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
   <style>
-    body {
-      background: #181b1e;
-      color: #fff;
-      font-family: 'Segoe UI', Arial, sans-serif;
-      margin: 0;
-    }
-    header {
-      background: #232629;
-      display: flex;
-      align-items: center;
-      padding: 1rem 2rem;
-    }
-    header .logo {
-      height: 50px;
-      margin-right: 18px;
-    }
-    header .title {
-      font-size: 2rem;
-      font-weight: bold;
-      letter-spacing: 1px;
-    }
-    .card {
-      background: #232629;
-      border-radius: 16px;
-      box-shadow: 0 2px 24px 8px #0004;
-      max-width: 540px;
-      margin: 60px auto;
-      padding: 48px 34px 44px 34px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 400px;
-    }
-    .card-logo {
-      width: 240px;
-      margin: 0 auto 36px auto;
-      display: block;
-    }
-    h2 {
-      font-size: 1.4em;
-      font-weight: bold;
-      margin: 0 0 22px 0;
-      text-align: left;
-      width: 100%;
-      color: #fff;
-    }
-    .form {
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      gap: 18px;
-    }
-    .input {
-      background: #262b2f;
-      color: #eee;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 13px 16px;
-      font-size: 1.1em;
-      outline: none;
-      width: 100%;
-      box-sizing: border-box;
-    }
-    .input:focus { border-color: #e62429; }
-    .btn {
-      background: #36393f;
-      color: #fff;
-      font-weight: bold;
-      font-size: 1.09em;
-      border: none;
-      border-radius: 8px;
-      padding: 13px 0;
-      cursor: pointer;
-      transition: background 0.2s;
-      width: 100%;
-    }
-    .btn:hover { background: #e62429; color: #fff;}
-    .register-link {
-      color: #eee;
-      margin-top: 28px;
-      width: 100%;
-      text-align: left;
-      font-size: 1em;
-    }
-    .register-link button {
-      padding: 7px 18px;
-      border-radius: 8px;
-      background: #232629;
-      color: #fff;
-      font-weight: bold;
-      border: none;
-      font-size: 1em;
-      margin-left: 10px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .register-link button:hover { background: #e62429;}
-    .error {
-      color: #e62429;
-      margin-top: 14px;
-      margin-bottom: 4px;
-      font-weight: bold;
-      width: 100%;
-      text-align: left;
-      display: block;
-    }
-    @media (max-width: 700px) {
-      .card { max-width: 98vw; padding: 30px 4vw;}
-      .card-logo { width: 140px;}
-      header { flex-direction: column; align-items: flex-start; padding: 0.75em 1em;}
-    }
-    #dashboard {
-      max-width: 900px;
-      margin: 40px auto;
-      background: #232629;
-      border-radius: 16px;
-      box-shadow: 0 2px 18px #0003;
-      padding: 38px 28px;
-      color: #fff;
-    }
-    #vaultTable th, #vaultTable td {
-      padding: 9px 16px;
-      border-bottom: 1px solid #36393f;
-    }
-    #vaultTable {
-      background: #232629;
-      width: 100%;
-      border-radius: 8px;
-      color: #fff;
-      margin: 18px 0;
-      border-collapse: collapse;
-      font-size: 1em;
-    }
-    #vaultTable tr:hover { background: #181b1e;}
-    #vaultTable th {
-      background: #262b2f;
-    }
-    /* Modal styles can be added as needed */
-    #vaultModal {
-      display:none; position: fixed; left: 0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,.7); z-index:9999;
-    }
-    #vaultModal .modal-content {
-      background: #232629;
-      padding: 40px 30px;
-      border-radius: 14px;
-      max-width: 420px;
-      margin: 7vh auto;
-      position: relative;
-      color: #fff;
-      box-shadow: 0 4px 32px #0005;
-    }
-    #modalCloseBtn {
-      position:absolute; right:18px; top:18px; background: #e62429; color:#fff;
-      border:none; border-radius:7px; font-size:1.2em; padding:4px 14px; cursor:pointer;
-    }
+    body { background: #181b1e; font-family: 'Segoe UI', Arial, sans-serif; margin:0; }
+    header { display:flex; align-items:center; background:#222;padding:1rem 2rem;}
+    .logo { height:48px;margin-right:18px;}
+    .title { font-size:2rem; font-weight:bold; color:#fff;}
+    nav { display:flex; gap:36px; background:#232629; padding:0.7em 2em; position:relative;}
+    nav .tab { color:#fff;font-weight:600;cursor:pointer;font-size:1.13em;padding-bottom:5px;transition:color .2s;}
+    nav .tab.active { color:#e62429; border-bottom: 2px solid #e62429;}
+    .main-content {background:#232629;max-width:1300px;margin:38px auto;padding:42px 36px;border-radius:16px;}
+    h2 {font-size:2em;margin:0 0 32px 0;}
+    .control-row {display:flex;gap:12px;margin-bottom:26px;flex-wrap:wrap;}
+    .control-row > * {font-size:1em;}
+    .filter, .input {padding:8px 10px;border-radius:7px;border:1px solid #bbb;}
+    .input {width:120px;}
+    .input.notes {width:180px;}
+    .add-btn {background:#e62429;color:#fff;font-weight:bold;border:none;border-radius:7px; padding:9px 24px;font-size:1em;cursor:pointer;}
+    .stats {font-weight:500;margin-bottom:12px;}
+    table {border-radius:8px; width:100%; border-collapse:collapse; background:#fff; color:#232629;box-shadow:0 2px 24px #0002;}
+    th, td {padding:11px 13px; border-bottom:1px solid #eee;}
+    th {background:#eef; color:#232629; font-weight:bold;}
+    input.table-input {width:100%;background:#f9f9fb;border-radius:6px;border:1px solid #ccc;padding:7px;}
+    select.progress {border-radius:5px;padding:6px;}
+    .hidden {display:none;}
+    @media(max-width:900px){.main-content{padding:13px 3vw;}}
+    @media(max-width:600px){nav{gap:12px;padding:0.7em 1em;} h2{font-size:1.2em;} .main-content{padding:8px;}}
   </style>
 </head>
 <body>
   <header>
     <img src="logo.png" class="logo" alt="Logo" onerror="this.style.display='none'">
-    <span class="title">Vault Turnover Tracker</span>
+    <span class="title">Site Work Tracker</span>
   </header>
-  <div class="card" id="loginPage">
-    <img src="logo.png" class="card-logo" alt="Logo" onerror="this.style.display='none'">
-    <h2>Login</h2>
-    <form id="loginForm" class="form">
-      <input id="loginEmail" class="input" type="email" placeholder="Email" required />
-      <input id="loginPassword" class="input" type="password" placeholder="Password" required />
-      <button class="btn" type="submit">Login</button>
-    </form>
-    <span id="loginMsg" class="error" style="display:none;"></span>
-    <div class="register-link">Need an account?
-      <button id="switchToRegister">Register</button>
-    </div>
+  <nav>
+    <span class="tab active" data-tab="dashboard">Dashboard</span>
+    <span class="tab" data-tab="damage">Damage Reports</span>
+    <span class="tab" data-tab="schedules">Schedules</span>
+    <span class="tab" data-tab="vaults">Vault Tracker</span>
+    <span class="tab" data-tab="logout" style="margin-left:auto;">Logout</span>
+  </nav>
+  <div class="main-content" id="dashboard-page">
+    <h2>Dashboard</h2>
+    <div>This space reserved for analytics summary, quick stats and KPIs.</div>
   </div>
-  <div class="card" id="registerPage" style="display:none;">
-    <img src="logo.png" class="card-logo" alt="Logo" onerror="this.style.display='none'">
-    <h2>Register</h2>
-    <form id="registerForm" class="form">
-      <input id="registerEmail" class="input" type="email" placeholder="Email" required />
-      <input id="registerPassword" class="input" type="password" placeholder="Password" required />
-      <select id="registerRole" class="input">
-        <option value="user">User</option>
-        <option value="admin">Admin</option>
+  <div class="main-content hidden" id="damage-page">
+    <h2>Damage Reports</h2>
+    <div>Add interactive damage report table and actions here.</div>
+  </div>
+  <div class="main-content hidden" id="schedules-page">
+    <h2>Schedules</h2>
+    <div>Add scheduling/calendar/table features here.</div>
+  </div>
+  <div class="main-content hidden" id="vaults-page">
+    <h2>Vault Tracker</h2>
+    <div class="control-row">
+      <label>Campus: <select class="filter" id="filter-campus"><option value="">All</option></select></label>
+      <label>Category: <select class="filter" id="filter-category"><option value="">All</option></select></label>
+      <input class="input" id="filter-building" placeholder="Building">
+      <input class="input" id="filter-vaultId" placeholder="Vault ID">
+      <select class="filter" id="filter-progress">
+        <option value="">All Progress</option>
+        <option>Not Started</option>
+        <option>Turned Over</option>
+        <option>In Progress</option>
       </select>
-      <button class="btn" type="submit">Register</button>
-    </form>
-    <span id="registerError" class="error" style="display:none"></span>
-    <div class="register-link"><button id="backToLogin">Back to Login</button></div>
-  </div>
-  <div id="dashboard" style="display:none;">
-    <img src="logo.png" class="logo" style="width:85px;margin-bottom:10px;" alt="Logo" onerror="this.style.display='none'">
-    <h2 style="font-size:1.3em;">Vault Tracking Dashboard</h2>
-    <button id="logoutBtn" class="btn" style="max-width:200px;">Logout</button>
-    <button id="addVaultBtn" class="btn" style="max-width:200px;">Add Vault</button>
-    <input id="vaultExcelInput" type="file" accept=".xlsx,.xls" style="margin:15px 0;" />
+      <input class="input notes" id="filter-notes" placeholder="Notes (optional)">
+      <input type="file" id="excelInput" accept=".xlsx,.xls" style="margin-left:20px;">
+      <button class="add-btn" id="addVaultBtn">Add Vault</button>
+    </div>
+    <div class="stats" id="vaultStats"></div>
     <div id="vaultTableContainer"></div>
   </div>
-  <div id="vaultModal"><div class="modal-content">
-      <button id="modalCloseBtn">X</button>
-      <h3 id="modalTitle" style="font-size:1.13em;font-weight:bold;">Add/Edit Vault Entry</h3>
-      <form id="vaultForm" class="form">
-        <input id="vCampus" class="input" placeholder="Campus" required />
-        <input id="vBuilding" class="input" placeholder="Building" required />
-        <input id="vVaultId" class="input" placeholder="Vault ID" required />
-        <input id="vStatus" class="input" placeholder="Status" required />
-        <input id="vTurnoverDate" class="input" placeholder="Turnover Date" type="date" />
-        <input id="vAttachmentInput" class="input" type="file" accept="image/*,application/pdf" />
-        <img id="vPhotoPreview" src="" style="display:none;max-width:100px;" /><br>
-        <button type="button" id="vCapturePhotoBtn" class="btn">Capture Photo</button>
-        <button class="btn" type="submit">Save</button>
-      </form>
-    </div></div>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
-  <script type="module" src="app.js"></script>
+  <script type="module">
+const tabEls = document.querySelectorAll('.tab');
+const pages = {
+  dashboard: document.getElementById('dashboard-page'),
+  damage: document.getElementById('damage-page'),
+  schedules: document.getElementById('schedules-page'),
+  vaults: document.getElementById('vaults-page'),
+};
+tabEls.forEach(tab => {
+  tab.addEventListener('click', () => {
+    if(tab.dataset.tab === 'logout') { location.reload(); return; }
+    tabEls.forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    Object.values(pages).forEach(p => p.classList.add('hidden'));
+    pages[tab.dataset.tab].classList.remove('hidden');
+  });
+});
+
+let vaultRows = [];
+let filters = { campus: '', category: '', building: '', vaultId: '', progress: '', notes: ''};
+
+function renderVaultTable() {
+  const container = document.getElementById('vaultTableContainer');
+  if(!container) return;
+  let filtered = vaultRows.filter(row =>
+    (!filters.campus || row.Campus===filters.campus) &&
+    (!filters.category || row.Category===filters.category) &&
+    (!filters.building || row.Building?.toLowerCase().includes(filters.building.toLowerCase())) &&
+    (!filters.vaultId || row['Vault ID']?.toLowerCase().includes(filters.vaultId.toLowerCase())) &&
+    (!filters.progress || row.Progress===filters.progress) &&
+    (!filters.notes || (row.Notes || '').toLowerCase().includes(filters.notes.toLowerCase()))
+  );
+  let turned = filtered.filter(r=>r.Progress==='Turned Over').length;
+  let total = filtered.length;
+  document.getElementById('vaultStats').textContent = `${turned} turned over / ${total} remaining`;
+
+  if(!filtered.length) {
+    container.innerHTML = '<div style="color:#bbb;padding:18px;">No vaults tracked yet. Import or add manually.</div>';
+    return;
+  }
+  let html = `<table><thead>
+    <tr>
+      <th>Campus</th><th>Building</th><th>Vault ID</th>
+      <th>Category</th><th>Progress</th><th>Notes</th>
+    </tr>
+    </thead><tbody>`;
+  html += filtered.map((row, idx) =>
+    `<tr>
+      <td>${row.Campus || ''}</td>
+      <td>${row.Building || ''}</td>
+      <td>${row['Vault ID'] || ''}</td>
+      <td>${row.Category || ''}</td>
+      <td>
+        <select class="progress" onchange="window.handleProgressChange(${idx}, this.value)">
+          <option${row.Progress==='Not Started'?' selected':''}>Not Started</option>
+          <option${row.Progress==='Turned Over'?' selected':''}>Turned Over</option>
+          <option${row.Progress==='In Progress'?' selected':''}>In Progress</option>
+        </select>
+      </td>
+      <td>
+        <input class="table-input" type="text" value="${row.Notes||''}" onchange="window.handleNotesChange(${idx}, this.value)" />
+      </td>
+    </tr>`
+  ).join('');
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+function refreshFilters() {
+  let campusSet = [...new Set(vaultRows.map(r=>r.Campus).filter(Boolean))];
+  let campusSel = document.getElementById('filter-campus');
+  campusSel.innerHTML = '<option value="">All</option>'+campusSet.map(c=>`<option>${c}</option>`).join('');
+  let catSet = [...new Set(vaultRows.map(r=>r.Category).filter(Boolean))];
+  let catSel = document.getElementById('filter-category');
+  catSel.innerHTML = '<option value="">All</option>'+catSet.map(cat=>`<option>${cat}</option>`).join('');
+}
+['campus','category','building','vaultId','progress','notes'].forEach(f => {
+  document.getElementById(`filter-${f}`).addEventListener('input', e => {
+    filters[f] = e.target.value;
+    renderVaultTable();
+  });
+});
+document.getElementById('excelInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e2) {
+    const workbook = XLSX.read(e2.target.result, { type: 'binary' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
+    let [header,...dataRows] = rows.filter(r=>r.some(n=>n));
+    const idx = key => header.findIndex(h=> (h||'').toLowerCase().includes(key));
+    vaultRows = dataRows.map(row => ({
+      Campus: row[idx('campus')] || '',
+      Building: row[idx('building')] || '',
+      'Vault ID': row[idx('vault')] || row[idx('id')] || '',
+      Category: row[idx('category')] || '',
+      Progress: row[idx('progress')] || row[idx('status')] || 'Not Started',
+      Notes: row[idx('notes')] || ''
+    })).filter(r => r['Vault ID']);
+    refreshFilters();
+    renderVaultTable();
+  };
+  reader.readAsBinaryString(file);
+});
+document.getElementById('addVaultBtn').addEventListener('click', () => {
+  vaultRows.unshift({
+    Campus:'',Building:'','Vault ID':'',Category:'',Progress:'Not Started',Notes:''
+  });
+  renderVaultTable();
+  refreshFilters();
+});
+window.handleProgressChange = (idx, val) => {
+  vaultRows[idx].Progress = val;
+  renderVaultTable();
+};
+window.handleNotesChange = (idx, val) => {
+  vaultRows[idx].Notes = val;
+};
+renderVaultTable();
+  </script>
 </body>
 </html>
