@@ -1,256 +1,224 @@
-import { createClient } from 'https://cdn.skypack.dev/@supabase/supabase-js'
-const supabase = createClient(
-  'https://sawnurwzfmkdjpafunxa.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0'
-);
-
-let vaults = [];
-let editingVaultIdx = null;
-let capturedPhoto = null;
-
-// --- DOMContentLoaded wrapper ---
-window.addEventListener('DOMContentLoaded', function() {
-  // --- AUTH FLOW ---
-  function showLogin() {
-    document.getElementById('loginPage').style.display = "block";
-    document.getElementById('registerPage').style.display = "none";
-    document.getElementById('dashboard')?.style.display = "none";
-  }
-  function showRegister() {
-    document.getElementById('loginPage').style.display = "none";
-    document.getElementById('registerPage').style.display = "block";
-    document.getElementById('dashboard')?.style.display = "none";
-    document.getElementById('registerError').style.display = "none";
-  }
-  function showDashboard() {
-    document.getElementById('loginPage').style.display = "none";
-    document.getElementById('registerPage').style.display = "none";
-    document.getElementById('dashboard')?.style.display = "block";
-    renderVaultTable();
-  }
-
-  async function registerUser(email, password, role) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { role } }
-    });
-    if (error) {
-      document.getElementById('registerError').textContent = error.message;
-      document.getElementById('registerError').style.display = "block";
-    } else {
-      alert('Registration successful! Check your email for confirmation.');
-      showLogin();
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Vault Turnover Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      background: #181b1e;
+      color: #fff;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
     }
-  }
-  async function loginUser(email, password) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) {
-      document.getElementById('loginMsg').textContent = error.message;
-      document.getElementById('loginMsg').style.display = "block";
-      return null;
+    header {
+      background: #232629;
+      display: flex;
+      align-items: center;
+      padding: 1rem 2rem;
     }
-    document.getElementById('loginMsg').style.display = "none";
-    showDashboard();
-    loadVaults();
-    return data;
-  }
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    showLogin();
-  }
-
-  // --- VAULT LOGIC ---
-  async function loadVaults() {
-    const { data, error } = await supabase.from('vaults').select('*');
-    vaults = data || [];
-    renderVaultTable();
-  }
-  async function saveVaultToDB(vault) {
-    if (editingVaultIdx !== null && vaults[editingVaultIdx]?.id) {
-      await supabase.from('vaults').update(vault).eq('id', vaults[editingVaultIdx].id);
-    } else {
-      await supabase.from('vaults').insert([vault]);
+    header .logo {
+      height: 50px;
+      margin-right: 18px;
     }
-    loadVaults();
-  }
-  function renderVaultTable() {
-    const container = document.getElementById('vaultTableContainer');
-    if (!container) return;
-    if (!vaults.length) {
-      container.innerHTML = `<p>No vaults tracked yet. Import or add manually.</p>`;
-      return;
+    header .title {
+      font-size: 2rem;
+      font-weight: bold;
+      letter-spacing: 1px;
     }
-    let table = `<table id="vaultTable">
-      <thead>
-        <tr>
-          <th>Campus</th><th>Building</th><th>Vault ID</th>
-          <th>Status</th><th>Turnover Date</th>
-          <th>Attachment</th><th>Photo</th><th>Edit</th>
-        </tr>
-      </thead>
-      <tbody>`;
-    table += vaults.map((v, idx) =>
-      `<tr>
-        <td>${v.campus || ''}</td>
-        <td>${v.building || ''}</td>
-        <td>${v.vaultId || ''}</td>
-        <td>${v.status || ''}</td>
-        <td>${v.turnoverDate || ''}</td>
-        <td>${v.attachmentUrl ? `<a href="${v.attachmentUrl}" target="_blank">View</a>` : ''}
-          <input type="file" accept="image/*,application/pdf" style="display:none;" onchange="window.handleAttachFile(event,${idx})" />
-          <button onclick="this.previousElementSibling.click()">Attach File</button>
-        </td>
-        <td>${v.photoUrl ? `<img src="${v.photoUrl}" width="48" />` : ''}
-          <button onclick="window.editVault(${idx},true)">Take Photo</button>
-        </td>
-        <td><button onclick="window.editVault(${idx})">Edit</button></td>
-      </tr>`
-    ).join('');
-    table += `</tbody></table>`;
-    container.innerHTML = table;
-  }
-
-  function showVaultModal(editIdx = null, photoCapture = false) {
-    editingVaultIdx = editIdx;
-    capturedPhoto = null;
-    let v = { campus:'', building:'', vaultId:'', status:'', turnoverDate:'', attachmentUrl:'', photoUrl:'' };
-    if (editIdx !== null && vaults[editIdx]) v = vaults[editIdx];
-    document.getElementById('modalTitle').textContent = editIdx !== null ? "Edit Vault Entry" : "Add Vault Entry";
-    document.getElementById('vCampus').value = v.campus || '';
-    document.getElementById('vBuilding').value = v.building || '';
-    document.getElementById('vVaultId').value = v.vaultId || '';
-    document.getElementById('vStatus').value = v.status || '';
-    document.getElementById('vTurnoverDate').value = v.turnoverDate || '';
-    document.getElementById('vaultModal').style.display = "block";
-    document.getElementById('vPhotoPreview').style.display = "none";
-    document.getElementById('vPhotoPreview').src = '';
-    document.getElementById('vAttachmentInput').value = '';
-    if (photoCapture) openCameraCapture();
-  }
-  function closeVaultModal() {
-    document.getElementById('vaultModal').style.display = "none";
-    editingVaultIdx = null;
-    capturedPhoto = null;
-  }
-
-  // Handle vault add/edit/save
-  document.getElementById('vaultForm')?.addEventListener('submit', async function(e){
-    e.preventDefault();
-    const vault = {
-      campus: document.getElementById('vCampus').value,
-      building: document.getElementById('vBuilding').value,
-      vaultId: document.getElementById('vVaultId').value,
-      status: document.getElementById('vStatus').value,
-      turnoverDate: document.getElementById('vTurnoverDate').value,
-      attachmentUrl: vaults[editingVaultIdx]?.attachmentUrl || '',
-      photoUrl: capturedPhoto || vaults[editingVaultIdx]?.photoUrl || ''
-    };
-    await saveVaultToDB(vault);
-    closeVaultModal();
-    loadVaults();
-  });
-
-  document.getElementById('modalCloseBtn')?.addEventListener('click', closeVaultModal);
-
-  // PHOTO CAPTURE
-  document.getElementById('vCapturePhotoBtn')?.addEventListener('click', openCameraCapture);
-  function openCameraCapture() {
-    let modal = document.getElementById('vaultModal');
-    let video = document.createElement('video');
-    video.autoplay = true;
-    video.style.width = "100%";
-    modal.querySelector('.modal-content').appendChild(video);
-    navigator.mediaDevices.getUserMedia({ video:true })
-    .then(stream => {
-      video.srcObject = stream;
-      let snapBtn = document.createElement('button');
-      snapBtn.textContent = "Capture Photo";
-      snapBtn.onclick = function() {
-        let canvas = document.createElement('canvas');
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-        canvas.getContext('2d').drawImage(video,0,0,canvas.width,canvas.height);
-        capturedPhoto = canvas.toDataURL('image/png');
-        document.getElementById('vPhotoPreview').src = capturedPhoto;
-        document.getElementById('vPhotoPreview').style.display = "block";
-        stream.getTracks().forEach(track => track.stop());
-        video.remove();
-        snapBtn.remove();
-      }
-      modal.querySelector('.modal-content').appendChild(snapBtn);
-    });
-  }
-
-  // ATTACH FILE
-  window.handleAttachFile = async function(e, idx) {
-    const file = e.target.files[0];
-    if (!file) return;
-    vaults[idx].attachmentUrl = URL.createObjectURL(file);
-    renderVaultTable();
-  };
-
-  window.editVault = function(idx, photo = false) {
-    showVaultModal(idx, photo);
-  };
-
-  document.getElementById('addVaultBtn')?.addEventListener('click', function() {
-    showVaultModal(null, false);
-  });
-
-  document.getElementById('vaultExcelInput')?.addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = function(e2) {
-      const workbook = XLSX.read(e2.target.result, { type: 'binary' });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { header:1 });
-      const headerIdx = rows.findIndex(r => r && r.includes('Campus'));
-      if (headerIdx === -1) return alert("Header not found!");
-      const header = rows[headerIdx];
-      let mapField = key => header.findIndex(h => h && h.toLowerCase().includes(key));
-      for(let i = headerIdx+1; i < rows.length; i++) {
-        let row = rows[i];
-        if (!row) continue;
-        vaults.push({
-          campus: row[mapField('campus')] || '',
-          building: row[mapField('building')] || '',
-          vaultId: row[mapField('vault')] || row[mapField('id')] || '',
-          status: row[mapField('status')] || row[mapField('ready')] || '',
-          turnoverDate: row[mapField('date')] || ''
-        });
-      }
-      renderVaultTable();
-    };
-    reader.readAsBinaryString(file);
-  });
-
-  document.getElementById('logoutBtn')?.addEventListener('click', handleLogout);
-  document.getElementById('switchToRegister')?.addEventListener('click', showRegister);
-  document.getElementById('backToLogin')?.addEventListener('click', showLogin);
-
-  document.getElementById('loginForm')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('loginEmail').value.trim();
-    const password = document.getElementById('loginPassword').value;
-    loginUser(email, password);
-  });
-  document.getElementById('registerForm')?.addEventListener('submit', function(e) {
-    e.preventDefault();
-    const email = document.getElementById('registerEmail').value.trim();
-    const password = document.getElementById('registerPassword').value;
-    const role = document.getElementById('registerRole').value;
-    registerUser(email, password, role);
-  });
-
-  document.getElementById('resendConfirm')?.addEventListener('click', async function() {
-    const email = document.getElementById("loginEmail").value.trim();
-    if (!email) { alert("Enter your email first."); return; }
-    const { error } = await supabase.auth.resend({type: "signup", email});
-    if (error) alert("Error resending. Contact admin."); else alert("Confirmation email resent!");
-  });
-
-  // INIT
-  showLogin();
-});
+    .card {
+      background: #232629;
+      border-radius: 16px;
+      box-shadow: 0 2px 24px 8px #0004;
+      max-width: 540px;
+      margin: 60px auto;
+      padding: 48px 34px 44px 34px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 400px;
+    }
+    .card-logo {
+      width: 240px;
+      margin: 0 auto 36px auto;
+      display: block;
+    }
+    h2 {
+      font-size: 1.4em;
+      font-weight: bold;
+      margin: 0 0 22px 0;
+      text-align: left;
+      width: 100%;
+      color: #fff;
+    }
+    .form {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .input {
+      background: #262b2f;
+      color: #eee;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 13px 16px;
+      font-size: 1.1em;
+      outline: none;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .input:focus { border-color: #e62429; }
+    .btn {
+      background: #36393f;
+      color: #fff;
+      font-weight: bold;
+      font-size: 1.09em;
+      border: none;
+      border-radius: 8px;
+      padding: 13px 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      width: 100%;
+    }
+    .btn:hover { background: #e62429; color: #fff;}
+    .register-link {
+      color: #eee;
+      margin-top: 28px;
+      width: 100%;
+      text-align: left;
+      font-size: 1em;
+    }
+    .register-link button {
+      padding: 7px 18px;
+      border-radius: 8px;
+      background: #232629;
+      color: #fff;
+      font-weight: bold;
+      border: none;
+      font-size: 1em;
+      margin-left: 10px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .register-link button:hover { background: #e62429;}
+    .error {
+      color: #e62429;
+      margin-top: 14px;
+      margin-bottom: 4px;
+      font-weight: bold;
+      width: 100%;
+      text-align: left;
+      display: block;
+    }
+    @media (max-width: 700px) {
+      .card { max-width: 98vw; padding: 30px 4vw;}
+      .card-logo { width: 140px;}
+      header { flex-direction: column; align-items: flex-start; padding: 0.75em 1em;}
+    }
+    #dashboard {
+      max-width: 900px;
+      margin: 40px auto;
+      background: #232629;
+      border-radius: 16px;
+      box-shadow: 0 2px 18px #0003;
+      padding: 38px 28px;
+      color: #fff;
+    }
+    #vaultTable th, #vaultTable td {
+      padding: 9px 16px;
+      border-bottom: 1px solid #36393f;
+    }
+    #vaultTable {
+      background: #232629;
+      width: 100%;
+      border-radius: 8px;
+      color: #fff;
+      margin: 18px 0;
+      border-collapse: collapse;
+      font-size: 1em;
+    }
+    #vaultTable tr:hover { background: #181b1e;}
+    #vaultTable th {
+      background: #262b2f;
+    }
+    /* Modal styles can be added as needed */
+    #vaultModal {
+      display:none; position: fixed; left: 0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,.7); z-index:9999;
+    }
+    #vaultModal .modal-content {
+      background: #232629;
+      padding: 40px 30px;
+      border-radius: 14px;
+      max-width: 420px;
+      margin: 7vh auto;
+      position: relative;
+      color: #fff;
+      box-shadow: 0 4px 32px #0005;
+    }
+    #modalCloseBtn {
+      position:absolute; right:18px; top:18px; background: #e62429; color:#fff;
+      border:none; border-radius:7px; font-size:1.2em; padding:4px 14px; cursor:pointer;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" class="logo" alt="Logo" onerror="this.style.display='none'">
+    <span class="title">Vault Turnover Tracker</span>
+  </header>
+  <div class="card" id="loginPage">
+    <img src="logo.png" class="card-logo" alt="Logo" onerror="this.style.display='none'">
+    <h2>Login</h2>
+    <form id="loginForm" class="form">
+      <input id="loginEmail" class="input" type="email" placeholder="Email" required />
+      <input id="loginPassword" class="input" type="password" placeholder="Password" required />
+      <button class="btn" type="submit">Login</button>
+    </form>
+    <span id="loginMsg" class="error" style="display:none;"></span>
+    <div class="register-link">Need an account?
+      <button id="switchToRegister">Register</button>
+    </div>
+  </div>
+  <div class="card" id="registerPage" style="display:none;">
+    <img src="logo.png" class="card-logo" alt="Logo" onerror="this.style.display='none'">
+    <h2>Register</h2>
+    <form id="registerForm" class="form">
+      <input id="registerEmail" class="input" type="email" placeholder="Email" required />
+      <input id="registerPassword" class="input" type="password" placeholder="Password" required />
+      <select id="registerRole" class="input">
+        <option value="user">User</option>
+        <option value="admin">Admin</option>
+      </select>
+      <button class="btn" type="submit">Register</button>
+    </form>
+    <span id="registerError" class="error" style="display:none"></span>
+    <div class="register-link"><button id="backToLogin">Back to Login</button></div>
+  </div>
+  <div id="dashboard" style="display:none;">
+    <img src="logo.png" class="logo" style="width:85px;margin-bottom:10px;" alt="Logo" onerror="this.style.display='none'">
+    <h2 style="font-size:1.3em;">Vault Tracking Dashboard</h2>
+    <button id="logoutBtn" class="btn" style="max-width:200px;">Logout</button>
+    <button id="addVaultBtn" class="btn" style="max-width:200px;">Add Vault</button>
+    <input id="vaultExcelInput" type="file" accept=".xlsx,.xls" style="margin:15px 0;" />
+    <div id="vaultTableContainer"></div>
+  </div>
+  <div id="vaultModal"><div class="modal-content">
+      <button id="modalCloseBtn">X</button>
+      <h3 id="modalTitle" style="font-size:1.13em;font-weight:bold;">Add/Edit Vault Entry</h3>
+      <form id="vaultForm" class="form">
+        <input id="vCampus" class="input" placeholder="Campus" required />
+        <input id="vBuilding" class="input" placeholder="Building" required />
+        <input id="vVaultId" class="input" placeholder="Vault ID" required />
+        <input id="vStatus" class="input" placeholder="Status" required />
+        <input id="vTurnoverDate" class="input" placeholder="Turnover Date" type="date" />
+        <input id="vAttachmentInput" class="input" type="file" accept="image/*,application/pdf" />
+        <img id="vPhotoPreview" src="" style="display:none;max-width:100px;" /><br>
+        <button type="button" id="vCapturePhotoBtn" class="btn">Capture Photo</button>
+        <button class="btn" type="submit">Save</button>
+      </form>
+    </div></div>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
