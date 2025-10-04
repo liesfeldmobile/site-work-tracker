@@ -1,10 +1,6 @@
 
 // Base44 + Liesfeld UI Logic
-const VAULTS = [
-  { campus: "RIC3", building: "DC2", category: "Telecom", vaultId: "TMH-41", status: "Active", notes: "Installed May 2025" },
-  { campus: "RIC3", building: "DC2", category: "Electrical", vaultId: "BEV-17", status: "Active", notes: "Installed April 2025" }
-];
-
+const VAULTS = window.DEFAULT_VAULTS || [];
 const SCHEDULES = [
   { type: "Dry Utilities", date: "2025-10-03", location: "RIC3 DC2", crew: "Joe F.", description: "Install conduits" },
   { type: "Wet Utilities", date: "2025-10-04", location: "RIC3 DC2", crew: "Mike C.", description: "Hydro pressure test" }
