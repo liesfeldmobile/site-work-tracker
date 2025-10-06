@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Site Work Tracker</title>
+  <!-- Description and PWA metadata -->
+  <meta name="description" content="Site work PWA: schedule builder, vault tracker, and damage reports">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon-192.png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <meta name="theme-color" content="#202020">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="topbar">
+    <img src="logo.png" alt="Liesfeld logo" class="logo" />
+    <nav class="nav">
+      <button class="navbtn" onclick="go('dashboard')" id="nav-dashboard">Dashboard</button>
+      <button class="navbtn" onclick="go('schedule')" id="nav-schedule">Schedule</button>
+      <button class="navbtn" onclick="go('damage')" id="nav-damage">Damage Reports</button>
+      <button class="navbtn" onclick="go('vault')" id="nav-vault">Vaults</button>
+      <button class="navbtn" onclick="logout()">Logout</button>
+    </nav>
+  </div>
+
+  <!-- Main content area populated by app.js -->
+  <main id="main" tabindex="-1"></main>
+
+  <!-- Container for RIC3 Telecom editor. This will be populated by ric3-telecom-editor.js -->
+  <div id="vault-editor-container"></div>
+
+  <!-- Load the RIC3 Telecom dataset and editor scripts -->
+  <script src="ric3-telecom-vaults.js"></script>
+  <script src="ric3-telecom-editor.js"></script>
+  <!-- Main application script (navigation, schedule builder, damage reports, etc.) -->
+  <script src="app.js"></script>
+  <!-- Register service worker for offline capabilities -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', function() {
+        navigator.serviceWorker.register('service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>

@@ -966,7 +966,12 @@ const ric3TelecomVaults = [
 ];
 
 if (typeof window !== "undefined") {
+  // Expose the dataset on the global window for both our editor and any
+  // existing scripts that rely on `DEFAULT_VAULTS` (e.g. app.js). Assign
+  // both a custom property and the legacy DEFAULT_VAULTS to maintain
+  // backward compatibility.
   window.RIC3_TELECOM_VAULTS = ric3TelecomVaults;
+  window.DEFAULT_VAULTS = ric3TelecomVaults;
 }
 
 if (typeof module !== "undefined" && typeof module.exports !== "undefined") {
