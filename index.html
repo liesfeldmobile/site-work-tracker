@@ -24,6 +24,8 @@
       </div>
       <nav class="nav">
         <button class="navbtn" onclick="go('dashboard')" id="nav-dashboard">Dashboard</button>
+        <button class="navbtn" onclick="go('schedule')" id="nav-schedule">Schedule</button>
+        <button class="navbtn" onclick="go('damage')" id="nav-damage">Damage Reports</button>
         <button class="navbtn" onclick="go('vault')" id="nav-vault">Vaults</button>
         <div id="auth-nav" class="authnav"></div>
       </nav>
@@ -35,13 +37,14 @@
   </div>
 
   <script>
-    // If you need Supabase auth, set these via environment injection or inline (left as-is)
+    // Supabase settings (if used)
     window.SUPABASE_URL = window.SUPABASE_URL || "https://sawnurwzfmkdjpafunxa.supabase.co";
     window.SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0";
     document.getElementById('year').textContent = new Date().getFullYear();
   </script>
 
   <script src="supabase-auth.js"></script>
+  <!-- IMPORTANT: load data BEFORE app.js so hydration sees it -->
   <script src="ric3-telecom-vaults.js"></script>
   <script src="app.js"></script>
 

@@ -1,5 +1,5 @@
 
-const CACHE = 'swt-v4';
+const CACHE = 'swt-v5';
 const ASSETS = [
   '/', '/index.html', '/styles.css', '/app.js', '/supabase-auth.js',
   '/ric3-telecom-vaults.js', '/manifest.json', '/logo.png'
