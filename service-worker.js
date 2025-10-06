@@ -6,7 +6,7 @@
 // Changing this value causes the old cache to be discarded and fresh
 // resources to be fetched on the next visit. Increment the version
 // whenever you update application assets.
-const CACHE_NAME = 'site-work-cache-v2';
+const CACHE_NAME = 'site-work-cache-v3';'
 
 // List of files to cache during the install event. If you add more
 // resources to your app (e.g. images or other scripts) include them here.
