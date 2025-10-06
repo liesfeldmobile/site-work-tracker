@@ -1,5 +1,5 @@
 
-// Status options (dropdown)
+// Required status options
 const STATUS_OPTIONS = [
   "Not Started",
   "Excavated",
@@ -9,59 +9,63 @@ const STATUS_OPTIONS = [
   "Turned Over"
 ];
 
-// Persistence helpers: localStorage first, Supabase optional
+// Keep vaults in localStorage for persistence (no downloads)
 const LS_KEY = "ric3_vaults";
+let VAULTS = [];
 
-async function loadVaults() {
-  // 1) Try localStorage
+// First-load: hydrate from LS or from the repo's ric3-telecom-vaults.js
+async function hydrateVaults(){
   const cached = localStorage.getItem(LS_KEY);
   if (cached) {
-    try { return JSON.parse(cached); } catch {}
+    try { VAULTS = JSON.parse(cached); return; } catch {}
   }
-  // 2) Seed from bundled JSON
-  try {
-    const resp = await fetch("vaults-seed.json", { cache: "no-store" });
-    if (resp.ok) {
-      const data = await resp.json();
-      localStorage.setItem(LS_KEY, JSON.stringify(data));
-      return data;
-    }
-  } catch {}
-  return [];
+  // Fall back to the globally provided dataset
+  if (Array.isArray(window.RIC3_TELECOM_VAULTS)) {
+    // Normalize keys
+    VAULTS = window.RIC3_TELECOM_VAULTS.map(v => ({
+      campus: v.campus ?? v.Campus ?? "",
+      building: v.building ?? v.Building ?? "",
+      vault_id: v.vaultId ?? v.vault_id ?? v["Vault ID"] ?? "",
+      status: v.status ?? v.Status ?? inferStatus(v)
+    }));
+    localStorage.setItem(LS_KEY, JSON.stringify(VAULTS));
+  } else {
+    VAULTS = [];
+  }
 }
 
-function saveVaults(vaults) {
-  localStorage.setItem(LS_KEY, JSON.stringify(vaults));
+function inferStatus(v){
+  const yes = (x) => String(x||"").trim().toLowerCase() in {"y":1,"yes":1,"true":1,"1":1};
+  if (yes(v.proofed) || yes(v.accessories)) return "Proofed / Accessories Complete";
+  return "Not Started";
 }
+
+function save(){ localStorage.setItem(LS_KEY, JSON.stringify(VAULTS)); }
 
 function requireAuth(page){ return page !== 'login'; }
 
-function renderStatusSummary(vaults) {
+function highlightNav(page){
+  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
+  const btn = document.getElementById('nav-'+page); if (btn) btn.classList.add('active');
+}
+
+function chartStatusSummary(target, vaults){
   const counts = Object.fromEntries(STATUS_OPTIONS.map(s => [s, 0]));
-  vaults.forEach(v => { counts[v.status] = (counts[v.status]||0)+1; });
+  vaults.forEach(v => counts[v.status] = (counts[v.status]||0)+1);
   const turned = counts["Turned Over"] || 0;
   const outstanding = vaults.length - turned;
-  const canvas = document.createElement('canvas');
-  canvas.id = "statusSummaryChart";
-  canvas.width = 600; canvas.height = 240;
 
-  const wrap = document.createElement('div');
-  wrap.appendChild(canvas);
-
-  // Chart: Turned Over vs Outstanding
+  const c = document.createElement('canvas');
+  c.width = 600; c.height = 240;
+  target.appendChild(c);
   setTimeout(() => {
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-      type: 'doughnut',
-      data: { labels: ['Turned Over', 'Outstanding'], datasets: [{ data: [turned, outstanding] }] },
-      options: { plugins: { legend: { position: 'bottom' } } }
-    });
+    const ctx = c.getContext('2d');
+    new Chart(ctx, { type: 'doughnut', data: { labels: ['Turned Over','Outstanding'], datasets: [{ data: [turned, outstanding] }] }, options: { plugins: { legend: { position: 'bottom' }}}});
   }, 0);
 
-  // Table breakdown
   const table = document.createElement('table');
   table.className = 'simple-table';
-  table.innerHTML = `<thead><tr><th>Status</th><th>Count</th></tr></thead>`;
+  table.innerHTML = '<thead><tr><th>Status</th><th>Count</th></tr></thead>';
   const tb = document.createElement('tbody');
   STATUS_OPTIONS.forEach(s => {
     const tr = document.createElement('tr');
@@ -69,125 +73,86 @@ function renderStatusSummary(vaults) {
     tb.appendChild(tr);
   });
   table.appendChild(tb);
-  wrap.appendChild(table);
-  return wrap;
+  target.appendChild(table);
 }
-
-let VAULTS = [];
 
 async function go(page){
   const user = window.CURRENT_USER || null;
   if (requireAuth(page) && !user) page = 'login';
-
-  document.querySelectorAll('.navbtn').forEach(b=>b.classList.remove('active'));
-  const navBtn = document.getElementById('nav-'+page); if (navBtn) navBtn.classList.add('active');
-
+  highlightNav(page);
   document.body.dataset.page = page;
   const main = document.getElementById('main');
 
-  if (page === 'dashboard') {
-    if (!VAULTS.length) VAULTS = await loadVaults();
-    main.innerHTML = `<h2>Dashboard</h2>`;
-    main.appendChild(renderStatusSummary(VAULTS));
-    main.insertAdjacentHTML('beforeend', `<p style="margin-top:12px"><a class="btn" href="#" onclick="go('vault')">Manage Vaults</a></p>`);
+  if (!VAULTS.length) await hydrateVaults();
+
+  if (page === 'dashboard'){
+    main.innerHTML = '<h2>Dashboard</h2><div id="summary"></div><p style="margin-top:12px"><a class="btn" href="#" onclick="go(\'vault\')">Go to Vaults</a></p>';
+    chartStatusSummary(document.getElementById('summary'), VAULTS);
     return;
   }
 
-  if (page === 'vault') {
-    if (!VAULTS.length) VAULTS = await loadVaults();
+  if (page === 'vault'){
+    // Always show these first four columns
+    const head = ['Campus','Building','Vault ID','Status'];
+    const thead = `<thead><tr>${head.map(h=>'<th>'+h+'</th>').join('')}</tr></thead>`;
 
-    // Unique key set (in case seed contains extras)
-    const keySet = new Set(['campus','building','vault_id','status']);
-    VAULTS.forEach(v => Object.keys(v||{}).forEach(k => keySet.add(k)));
-    const KEYS = Array.from(keySet);
-
-    const header = ['Campus','Building','Vault ID','Status']; // show these first
-    const otherKeys = KEYS.filter(k => !['campus','building','vault_id','status'].includes(k));
-    const headerHtml = header.map(h => `<th>${h}</th>`).join('') + otherKeys.map(k=>`<th>${k}</th>`).join('');
-
-    const rows = VAULTS.map((v, idx) => {
-      const statusSelect = `<select data-idx="${idx}" data-key="status">${STATUS_OPTIONS.map(s=>`<option value="${s}" ${s===v.status?'selected':''}>${s}</option>`).join('')}</select>`;
-      const cells = [
-        `<td><input data-idx="${idx}" data-key="campus" value="${v.campus||''}"></td>`,
-        `<td><input data-idx="${idx}" data-key="building" value="${v.building||''}"></td>`,
-        `<td><input data-idx="${idx}" data-key="vault_id" value="${v.vault_id||''}"></td>`,
-        `<td>${statusSelect}</td>`
-      ];
-      otherKeys.forEach(k => {
-        cells.push(`<td><input data-idx="${idx}" data-key="${k}" value="${v[k]??''}"></td>`);
-      });
-      return `<tr>${cells.join('')}</tr>`;
+    const rows = VAULTS.map((v, i) => {
+      const statusSelect = '<select data-idx="'+i+'" data-key="status">' + STATUS_OPTIONS.map(s => `<option value="${s}" ${s===v.status?'selected':''}>${s}</option>`).join('') + '</select>';
+      return '<tr>' +
+        `<td><input data-idx="${i}" data-key="campus" value="${v.campus||''}"></td>` +
+        `<td><input data-idx="${i}" data-key="building" value="${v.building||''}"></td>` +
+        `<td><input data-idx="${i}" data-key="vault_id" value="${v.vault_id||''}"></td>` +
+        `<td>${statusSelect}</td>` +
+      '</tr>';
     }).join('');
 
     main.innerHTML = `
       <h2>Vault Tracker</h2>
       <div class="table-wrap">
-        <table class="simple-table">
-          <thead><tr>${headerHtml}</tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
+        <table class="simple-table">${thead}<tbody>${rows}</tbody></table>
       </div>
-      <details style="margin-top:12px">
-        <summary>Quick Stats</summary>
-        <div id="stats"></div>
-      </details>
-      <form id="addVaultForm" style="margin-top:12px">
+      <h3 style="margin-top:14px">Add Vault</h3>
+      <form id="addVaultForm">
         <label>Campus <input name="campus" required></label>
         <label>Building <input name="building" required></label>
         <label>Vault ID <input name="vault_id" required></label>
         <label>Status
           <select name="status">${STATUS_OPTIONS.map(s=>`<option value="${s}">${s}</option>`).join('')}</select>
         </label>
-        <button type="submit">Add Vault</button>
+        <button type="submit">Add</button>
       </form>
-      <p style="margin-top:10px">
-        <a class="btn" href="#" id="downloadJson">Download Vaults JSON</a>
-      </p>
+      <details style="margin-top:12px">
+        <summary>Quick Stats</summary>
+        <div id="stats"></div>
+      </details>
     `;
 
-    // Wire inputs
+    // Wire editing
     main.querySelectorAll('input[data-idx], select[data-idx]').forEach(el => {
-      el.addEventListener('input', (e) => {
+      const update = (e) => {
         const { idx, key } = e.target.dataset;
-        VAULTS[idx][key] = e.target.value;
-        saveVaults(VAULTS);
-      });
-      el.addEventListener('change', (e) => {
-        const { idx, key } = e.target.dataset;
-        VAULTS[idx][key] = e.target.value;
-        saveVaults(VAULTS);
-      });
+        VAULTS[+idx][key] = e.target.value;
+        save();
+      };
+      el.addEventListener('input', update);
+      el.addEventListener('change', update);
     });
 
-    // Add vault
+    // Add vault handler
     document.getElementById('addVaultForm').onsubmit = (e)=>{
       e.preventDefault();
       const f = e.target;
-      const newV = {
-        campus: f.campus.value, building: f.building.value, vault_id: f.vault_id.value, status: f.status.value
-      };
-      VAULTS.push(newV);
-      saveVaults(VAULTS);
-      go('vault');
+      const row = { campus: f.campus.value, building: f.building.value, vault_id: f.vault_id.value, status: f.status.value };
+      VAULTS.push(row); save(); go('vault');
     };
 
-    // Download JSON
-    document.getElementById('downloadJson').addEventListener('click', (e)=>{
-      e.preventDefault();
-      const blob = new Blob([JSON.stringify(VAULTS, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = 'vaults.json';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    });
-
-    // Stats (pie + table)
+    // Stats
     const statsEl = document.getElementById('stats');
-    statsEl.innerHTML = '';
-    statsEl.appendChild(renderStatusSummary(VAULTS));
+    chartStatusSummary(statsEl, VAULTS);
+    return;
   }
 
-  if (page === 'login') {
+  if (page === 'login'){
     main.innerHTML = `
       <h2>Account</h2>
       <div class="auth-section">
