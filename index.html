@@ -2,9 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Site Work Tracker</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="description" content="Site work PWA: schedule builder, vault tracker, and damage reports" />
+  <!-- Description and PWA metadata -->
+  <meta name="description" content="Site work PWA: schedule builder, vault tracker, and damage reports">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -22,9 +23,19 @@
       <button class="navbtn" onclick="logout()">Logout</button>
     </nav>
   </div>
+
+  <!-- Main content area populated by app.js -->
   <main id="main" tabindex="-1"></main>
- <v<script src="vault_data.js"></script>t>
+
+  <!-- Container for RIC3 Telecom editor. This will be populated by ric3-telecom-editor.js -->
+  <div id="vault-editor-container"></div>
+
+  <!-- Load the RIC3 Telecom dataset and editor scripts -->
+  <script src="ric3-telecom-vaults.js"></script>
+  <script src="ric3-telecom-editor.js"></script>
+  <!-- Main application script (navigation, schedule builder, damage reports, etc.) -->
   <script src="app.js"></script>
+  <!-- Register service worker for offline capabilities -->
   <script>
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', function() {
