@@ -1,82 +1,40 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Site Work Tracker</title>
-  <!-- Description and PWA metadata -->
-  <meta name="description" content="Site work PWA: schedule builder, vault tracker, and damage reports">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" href="icons/icon-192.png" sizes="192x192">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta name="theme-color" content="#202020">
-  <link rel="stylesheet" href="styles.css">
-  <!-- Override the topbar background to contrast with the red logo -->
-  <style>
-    /* Make the header dark so the red Liesfeld logo stands out. */
-    .topbar {
-      background: var(--liesfeld-black, #202020);
-    }
-    /* Ensure nav buttons remain readable against the darker header */
-    .topbar .navbtn {
-      color: var(--liesfeld-white, #ffffff);
-    }
+  <meta name="description" content="Site work PWA: schedule builder, vault tracker, and damage reports" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#202020" />
+  <link rel="stylesheet" href="styles.css" />
 
-    /* Style for active nav buttons: red text and border for clarity against dark header */
-    .topbar .navbtn.active {
-      color: var(--liesfeld-red, #c73735);
-      border-bottom: 2px solid var(--liesfeld-red, #c73735);
-    }
-
-    /* Hide the RIC3 vault editor container on all pages except the Vault page. */
-    #vault-editor-container {
-      display: none;
-    }
-    body[data-page="vault"] #vault-editor-container {
-      display: block;
-    }
-  </style>
-
-  <!-- Firebase SDKs for app and authentication (compat version) -->
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-auth-compat.js"></script>
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
   <div class="topbar">
-    <img src="logo.png" alt="Liesfeld logo" class="logo" />
+    <div class="brand"><span class="appname">Site Work Tracker</span></div>
     <nav class="nav">
       <button class="navbtn" onclick="go('dashboard')" id="nav-dashboard">Dashboard</button>
       <button class="navbtn" onclick="go('schedule')" id="nav-schedule">Schedule</button>
       <button class="navbtn" onclick="go('damage')" id="nav-damage">Damage Reports</button>
       <button class="navbtn" onclick="go('vault')" id="nav-vault">Vaults</button>
-      <!-- Placeholder for login/logout buttons. Auth.js will populate this element -->
-      <div id="auth-nav" style="display:inline-block"></div>
+      <div id="auth-nav" class="authnav"></div>
     </nav>
   </div>
 
-  <!-- Main content area populated by app.js -->
-  <main id="main" tabindex="-1"></main>
-
-  <!-- Container for RIC3 Telecom editor. This will be populated by ric3-telecom-editor.js -->
+  <main id="main" tabindex="-1" aria-live="polite"></main>
   <div id="vault-editor-container"></div>
 
-  <!-- Load the RIC3 Telecom dataset and editor scripts -->
-  <!-- Chart.js library for visualizing vault summary -->
-  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
-
-  <!-- Authentication logic. This script depends on Firebase SDKs loaded above -->
-  <script src="ric3-auth.js"></script>
+  <script>
+    window.SUPABASE_URL = "https://sawnurwzfmkdjpafunxa.supabase.co";
+    window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhd251cnd6Zm1rZGpwYWZ1bnhhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkyNTc4NDQsImV4cCI6MjA3NDgzMzg0NH0.lPD4JuYCslIxp9237V2jfEpfCAHznfmwjvien0S-oH0";
+  </script>
+  <script src="supabase-auth.js"></script>
   <script src="ric3-telecom-vaults.js"></script>
   <script src="ric3-telecom-editor.js"></script>
-  <!-- Main application script (navigation, schedule builder, damage reports, etc.) -->
   <script src="app.js"></script>
-  <!-- Register service worker for offline capabilities -->
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', function() {
-        navigator.serviceWorker.register('service-worker.js');
-      });
-    }
-  </script>
 </body>
 </html>
