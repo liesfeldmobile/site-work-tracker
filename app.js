@@ -1,7 +1,9 @@
 
+// Full-data Vault rendering + existing pages
+
 const VAULTS = window.RIC3_TELECOM_VAULTS || [];
-const SCHEDULES = [];
-const DAMAGES = [];
+const SCHEDULES = window.SCHEDULES || [];
+const DAMAGES = window.DAMAGES || [];
 
 function requireAuth(page){ return page !== 'login'; }
 
@@ -31,7 +33,7 @@ function go(page){
   }
 
   if (page==='schedule'){
-    const rows = SCHEDULES.map(s=>`<tr><td>${s.type}</td><td>${s.date}</td><td>${s.location}</td><td>${s.crew}</td><td>${s.description}</td></tr>`).join('');
+    const rows = SCHEDULES.map(s=>`<tr><td>${s.type}</td><td>${s.date}</td><td>${s.location}</td><td>${s.crew||""}</td><td>${s.description||""}</td></tr>`).join('');
     main.innerHTML = `
       <h2>Schedule Builder</h2>
       <form id="addScheduleForm">
@@ -55,7 +57,7 @@ function go(page){
   }
 
   if (page==='damage'){
-    const rows = DAMAGES.map(d=>`<tr><td>${d.campus}</td><td>${d.building}</td><td>${d.vaultId}</td><td>${d.type}</td><td>${d.desc}</td><td>${d.date}</td><td>${d.author}</td></tr>`).join('');
+    const rows = DAMAGES.map(d=>`<tr><td>${d.campus}</td><td>${d.building}</td><td>${d.vaultId}</td><td>${d.type}</td><td>${d.desc||""}</td><td>${d.date}</td><td>${d.author||""}</td></tr>`).join('');
     main.innerHTML = `
       <h2>Vault Damage Tracker</h2>
       <form id="addDamageForm">
@@ -87,34 +89,28 @@ function go(page){
   }
 
   if (page==='vault'){
-    const rows = VAULTS.map(v=>`<tr><td>${v.campus}</td><td>${v.building}</td><td>${v.vaultId}</td><td>${v.category||""}</td><td>${v.progress||v.status||""}</td><td>${v.notes||""}</td></tr>`).join('');
+    // Build columns from ALL keys across objects
+    const keySet = new Set();
+    VAULTS.forEach(v => Object.keys(v||{}).forEach(k => keySet.add(k)));
+    const KEYS = Array.from(keySet);
+    const header = KEYS.map(k=>`<th>${k}</th>`).join('');
+    const rows = VAULTS.map(v=>`<tr>${KEYS.map(k=>`<td>${v[k]!==undefined?v[k]:""}</td>`).join('')}</tr>`).join('');
+
     main.innerHTML = `
       <h2>Vault Tracker</h2>
-      <form id="addVaultForm">
-        <label>Campus <input name="campus" required></label>
-        <label>Building <input name="building" required></label>
-        <label>Category <input name="category"></label>
-        <label>Vault ID <input name="vaultId" required></label>
-        <label>Status/Progress <input name="status"></label>
-        <label>Notes <input name="notes"></label>
-        <label>Attachment <input type="file" name="attachment" accept="image/*" capture="environment"></label>
-        <button type="submit">Add Vault</button>
-      </form>
-      <table class="simple-table">
-        <thead><tr><th>Campus</th><th>Building</th><th>ID</th><th>Category</th><th>Status</th><th>Notes</th></tr></thead>
-        <tbody>${rows}</tbody>
-      </table>`;
-    document.getElementById('addVaultForm').onsubmit = (e)=>{
-      e.preventDefault();
-      const f=e.target;
-      const newVault={campus:f.campus.value,building:f.building.value,category:f.category.value,vaultId:f.vaultId.value,progress:f.status.value,notes:f.notes.value,attachment:""};
-      const file=f.attachment.files[0];
-      if(file){
-        const reader=new FileReader();
-        reader.onload=()=>{newVault.attachment=reader.result;VAULTS.push(newVault);go('vault');};
-        reader.readAsDataURL(file);
-      } else { VAULTS.push(newVault); go('vault'); }
-    };
+      <p class="muted">Showing all fields detected in your dataset (${KEYS.length} columns).</p>
+      <div class="table-wrap">
+        <table class="simple-table">
+          <thead><tr>${header}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <p style="margin-top:10px">
+        <a class="btn" href="#" onclick="renderVaultEditor()">Open Editable Table</a>
+      </p>
+    `;
+
+    document.getElementById('vault-editor-container').innerHTML = '';
   }
 
   if (page==='login'){
@@ -139,9 +135,9 @@ function go(page){
           <button type="submit">Send Reset Email</button>
         </form>
       </div>`;
-    document.getElementById('loginForm').onsubmit = loginUser;
-    document.getElementById('registerForm').onsubmit = registerUser;
-    document.getElementById('resetForm').onsubmit = sendPasswordReset;
+    if (typeof loginUser === 'function') document.getElementById('loginForm').onsubmit = loginUser;
+    if (typeof registerUser === 'function') document.getElementById('registerForm').onsubmit = registerUser;
+    if (typeof sendPasswordReset === 'function') document.getElementById('resetForm').onsubmit = sendPasswordReset;
   }
 }
 
