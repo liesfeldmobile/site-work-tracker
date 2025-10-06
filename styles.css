@@ -1,16 +1,73 @@
 
-body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;background:#111;color:#eee;margin:0}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:#1a1a1a;border-bottom:1px solid #2a2a2a;position:sticky;top:0}
+/* --- Theme Tokens --- */
+:root {
+  --bg: #0e0f13;
+  --bg-soft: #141821;
+  --panel: #161a22;
+  --surface: #1a2030;
+  --text: #e6e9ee;
+  --muted: #9aa6b2;
+  --primary: #e74a3b;   /* Liesfeld red */
+  --primary-600: #c73735;
+  --accent: #34d399;    /* mint accent */
+  --ring: rgba(231,74,59,.35);
+}
+
+/* Reset-ish */
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  color:var(--text);
+  background:
+    radial-gradient(1200px 800px at -10% -10%,rgba(231,74,59,.18),transparent 60%),
+    radial-gradient(800px 600px at 110% 10%,rgba(52,211,153,.12),transparent 60%),
+    linear-gradient(180deg,#0e0f13 0%,#0f1218 100%);
+  background-attachment: fixed;
+}
+img{max-width:100%;display:block}
+
+/* Layout */
+.app-shell{min-height:100dvh;display:grid;grid-template-rows:auto 1fr auto}
+.topbar{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 14px;background:rgba(20,24,33,.88);backdrop-filter: blur(6px);
+  border-bottom:1px solid #202636
+}
+.brand{display:flex;align-items:center;gap:10px}
+.logo{height:34px;width:auto}
+.brand-copy{display:flex;flex-direction:column;line-height:1}
+.appname{font-weight:700;letter-spacing:.2px}
+.tagline{font-size:12px;color:var(--muted)}
+
 .nav{display:flex;gap:8px;align-items:center}
-.navbtn{background:transparent;border:0;color:#fff;padding:8px 10px;border-bottom:2px solid transparent}
-.navbtn:hover{color:#ec5349}
-.navbtn.active{border-bottom-color:#ec5349;color:#ec5349}
-main{padding:16px}
-.btn{background:#ec5349;border:1px solid #ec5349;border-radius:8px;color:#fff;padding:8px 12px;cursor:pointer}
-form{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));background:#16181a;padding:12px;border-radius:10px;border:1px solid #2a2a2a}
-form label{display:grid;gap:4px;font-size:12px;color:#9aa0a6}
-input,button,select{padding:8px 10px;border-radius:8px;border:1px solid #2a2a2a;background:#0f1113;color:#fff}
-.simple-table{width:100%;border-collapse:collapse;margin-top:12px;background:#16181a;border:1px solid #2a2a2a;border-radius:10px;overflow:hidden}
-.simple-table th,.simple-table td{padding:10px;border-bottom:1px solid #2a2a2a;text-align:left;font-size:14px}
+.navbtn{background:transparent;border:0;color:var(--text);padding:8px 10px;border-bottom:2px solid transparent;border-radius:8px}
+.navbtn:hover{color:var(--primary)}
+.navbtn.active{color:var(--primary);border-bottom-color:var(--primary)}
+.authnav{margin-left:6px}
+
+main#main{padding:18px}
+.footer{padding:14px;color:var(--muted);text-align:center;border-top:1px solid #202636;background:linear-gradient(180deg,transparent,rgba(26,32,48,.4))}
+
+/* Cards & forms */
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
+.card{background:var(--surface);border:1px solid #263148;border-radius:14px;padding:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+
+form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));background:var(--panel);padding:14px;border-radius:14px;border:1px solid #263148}
+form label{display:grid;gap:6px;font-size:12px;color:var(--muted)}
+input,select,button{padding:10px 12px;border-radius:12px;border:1px solid #2b374a;background:#0f141f;color:var(--text);outline:none}
+input:focus,select:focus{box-shadow:0 0 0 3px var(--ring);border-color:#395070}
+button[type="submit"], .btn{background:var(--primary);border-color:var(--primary);color:white;font-weight:700;cursor:pointer;transition:.15s transform ease}
+button[type="submit"]:hover,.btn:hover{transform:translateY(-1px)}
+
+/* Tables */
+.simple-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:12px;background:var(--panel);border:1px solid #263148;border-radius:14px;overflow:hidden}
+.simple-table th,.simple-table td{padding:12px;border-bottom:1px solid #223047;text-align:left;font-size:14px}
+.simple-table thead th{background:#151b27;color:#c7d2fe;font-weight:700}
+.simple-table tbody tr:hover{background:#131a28}
+
+/* Vault editor section visibility */
 #vault-editor-container{display:none;padding:16px}
 body[data-page="vault"] #vault-editor-container{display:block}
