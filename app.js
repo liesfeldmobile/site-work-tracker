@@ -63,14 +63,37 @@ function go(page) {
       e.preventDefault();
       alert('Damage report added!');
     };
-  }
-  if (page == 'vault') {
-    let vaultRows = VAULTS.map(v=>`<tr><td>${v.campus}</td><td>${v.building}</td><td>${v.category}</td><td>${v.vaultId}</td><td>${v.status}</td><td>${v.notes}</td></tr>`).join('');
+  }if (page == 'vault') {
+    let vaultRows = VAULTS.map(v => `<tr><td>${v.campus}</td><td>${v.building}</td><td>${v.vaultId}</td><td>${v.category}</td><td>${v.progress || v.status || ''}</td><td>${v.notes || ''}</td></tr>`).join('');
     document.getElementById('main').innerHTML = `
-      <section><h2>Vault Tracker</h2>
-        <table><thead><tr><th>Campus</th><th>Building</th><th>Category</th><th>ID</th><th>Status</th><th>Notes</th></tr></thead><tbody>${vaultRows}</tbody></table>
-      </section>`;
-  }
-}
-function logout() { document.getElementById('main').innerHTML = `<section><h2>Logged out!</h2></section>`; }
-document.addEventListener('DOMContentLoaded', () => { go('dashboard'); });
+        <section><h2>Vault Tracker</h2>
+            <form id="addVaultForm">
+                <input type="text" name="campus" placeholder="Campus" required />
+                <input type="text" name="building" placeholder="Building" required />
+                <input type="text" name="category" placeholder="Category" required />
+                <input type="text" name="vaultId" placeholder="Vault ID" required />
+                <input type="text" name="status" placeholder="Status/Progress" />
+                <input type="text" name="notes" placeholder="Notes" />
+                <button class="btn" type="submit">Add Vault</button>
+            </form>
+            <table>
+                <thead><tr><th>Campus</th><th>Building</th><th>ID</th><th>Category</th><th>Status</th><th>Notes</th></tr></thead>
+                <tbody>${vaultRows}</tbody>
+            </table>
+        </section>
+    `;
+    document.getElementById('addVaultForm').onsubmit = function(e) {
+        e.preventDefault();
+        const form = e.target;
+        const newVault = {
+            campus: form.campus.value,
+            building: form.building.value,
+            category: form.category.value,
+            vaultId: form.vaultId.value,
+            progress: form.status.value,
+            notes: form.notes.value
+        };
+        VAULTS.push(newVault);
+        go('vault');
+    };
+}cument.addEventListener('DOMContentLoaded', () => { go('dashboard'); });
