@@ -33,7 +33,7 @@
     return el;
   }
 
-  // Render the table
+  // Render the chart and editable table
   function renderTable(data) {
     const container = document.getElementById('vault-editor-container');
     if (!container) {
@@ -41,6 +41,9 @@
       return;
     }
     container.innerHTML = '';
+    // Create a canvas for the summary chart
+    const chartCanvas = createElement('canvas', { id: 'vault-summary-chart', width: 600, height: 250 });
+    container.appendChild(chartCanvas);
     // Table and header
     const table = createElement('table', { className: 'vault-editor-table' });
     const thead = createElement('thead');
@@ -77,6 +80,7 @@
                 const reader = new FileReader();
                 reader.onload = function(evt) {
                   RIC3_TELECOM_VAULTS[rowIndex][field] = evt.target.result;
+                  updateChart();
                 };
                 reader.readAsDataURL(file);
               }
@@ -90,6 +94,7 @@
             value: value,
             oninput: (e) => {
               RIC3_TELECOM_VAULTS[rowIndex][field] = e.target.value;
+              updateChart();
             }
           });
           cell.appendChild(input);
@@ -118,14 +123,89 @@
     }, ['Download Edited Data']);
     container.appendChild(table);
     container.appendChild(downloadButton);
+    // Draw the initial chart after the table is appended
+    updateChart();
+  }
+
+  // Function to compute summary statistics and draw/update the chart
+  function updateChart() {
+    const container = document.getElementById('vault-editor-container');
+    if (!container) return;
+    const canvas = container.querySelector('#vault-summary-chart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    // Aggregate counts for selected boolean fields
+    const metrics = ['proofed', 'accessories', 'ground', 'ladder', 'cleaned', 'riserLid', 'label'];
+    const yesCounts = metrics.map(m => RIC3_TELECOM_VAULTS.filter(v => {
+      const val = String(v[m] || '').toLowerCase();
+      return val === 'yes' || val === 'y';
+    }).length);
+    // Destroy existing chart instance if present
+    if (canvas._chart) {
+      canvas._chart.destroy();
+    }
+    canvas._chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: metrics,
+        datasets: [{
+          label: 'Count of Yes',
+          data: yesCounts
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          legend: {
+            display: false
+          }
+        },
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Field'
+            }
+          },
+          y: {
+            beginAtZero: true,
+            title: {
+              display: true,
+              text: 'Number of Vaults with "Yes"'
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // Observe changes to body[data-page] to render or clear the table based on current page
+  function onPageChange() {
+    const page = document.body.dataset.page;
+    const container = document.getElementById('vault-editor-container');
+    if (!container) return;
+    if (page === 'vault') {
+      // Render table only if not already rendered
+      if (!container.hasChildNodes()) {
+        renderTable(RIC3_TELECOM_VAULTS);
+      }
+    } else {
+      // Clear the container on other pages to hide the editor and chart
+      container.innerHTML = '';
+    }
   }
 
   // Initialize when DOM ready
   document.addEventListener('DOMContentLoaded', () => {
-    if (Array.isArray(RIC3_TELECOM_VAULTS)) {
-      renderTable(RIC3_TELECOM_VAULTS);
-    } else {
+    // If the dataset isn't defined, log an error
+    if (!Array.isArray(RIC3_TELECOM_VAULTS)) {
       console.error('RIC3_TELECOM_VAULTS is not defined or not an array');
+      return;
     }
+    // Render immediately if we start on the vault page
+    onPageChange();
+    // Observe changes to the data-page attribute on body
+    const observer = new MutationObserver(onPageChange);
+    observer.observe(document.body, { attributes: true, attributeFilter: ['data-page'] });
   });
 })();
