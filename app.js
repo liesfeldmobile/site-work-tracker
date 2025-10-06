@@ -20,6 +20,11 @@ function go(page) {
     const navBtn = document.getElementById('nav-' + page);
     if (navBtn) navBtn.classList.add('active');
   }
+
+  // Set a data-page attribute on the body so CSS can react to the current page
+  if (page) {
+    document.body.dataset.page = page;
+  }
   // Dashboard view
   if (page === 'dashboard') {
     document.getElementById('main').innerHTML = `

@@ -21,6 +21,20 @@
     .topbar .navbtn {
       color: var(--liesfeld-white, #ffffff);
     }
+
+    /* Style for active nav buttons: red text and border for clarity against dark header */
+    .topbar .navbtn.active {
+      color: var(--liesfeld-red, #c73735);
+      border-bottom: 2px solid var(--liesfeld-red, #c73735);
+    }
+
+    /* Hide the RIC3 vault editor container on all pages except the Vault page. */
+    #vault-editor-container {
+      display: none;
+    }
+    body[data-page="vault"] #vault-editor-container {
+      display: block;
+    }
   </style>
 </head>
 <body>
