@@ -197,6 +197,48 @@ function go(page) {
       }
     };
   }
+
+  // Login / registration / reset view
+  if (page === 'login') {
+    document.getElementById('main').innerHTML = `
+
+      <h2>Account</h2>
+      <div class="auth-section">
+        <h3>Login</h3>
+        <form id="loginForm">
+          <label>Email <input type="email" id="login-email" required></label>
+          <label>Password <input type="password" id="login-password" required></label>
+          <button type="submit">Login</button>
+        </form>
+        <h3>Register</h3>
+        <form id="registerForm">
+          <label>Email <input type="email" id="reg-email" required></label>
+          <label>Password <input type="password" id="reg-password" required></label>
+          <label>Confirm Password <input type="password" id="reg-confirm" required></label>
+          <button type="submit">Register</button>
+        </form>
+        <h3>Forgot Password</h3>
+        <form id="resetForm">
+          <label>Email <input type="email" id="reset-email" required></label>
+          <button type="submit">Send Reset Email</button>
+        </form>
+      </div>
+
+    `;
+    // Attach form handlers to call auth.js functions
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+      loginForm.onsubmit = loginUser;
+    }
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+      registerForm.onsubmit = registerUser;
+    }
+    const resetForm = document.getElementById('resetForm');
+    if (resetForm) {
+      resetForm.onsubmit = sendPasswordReset;
+    }
+  }
 }
 
 // Kick off the dashboard on page load

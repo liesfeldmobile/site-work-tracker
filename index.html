@@ -36,6 +36,10 @@
       display: block;
     }
   </style>
+
+  <!-- Firebase SDKs for app and authentication (compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-auth-compat.js"></script>
 </head>
 <body>
   <div class="topbar">
@@ -45,7 +49,8 @@
       <button class="navbtn" onclick="go('schedule')" id="nav-schedule">Schedule</button>
       <button class="navbtn" onclick="go('damage')" id="nav-damage">Damage Reports</button>
       <button class="navbtn" onclick="go('vault')" id="nav-vault">Vaults</button>
-      <button class="navbtn" onclick="logout()">Logout</button>
+      <!-- Placeholder for login/logout buttons. Auth.js will populate this element -->
+      <div id="auth-nav" style="display:inline-block"></div>
     </nav>
   </div>
 
@@ -58,6 +63,9 @@
   <!-- Load the RIC3 Telecom dataset and editor scripts -->
   <!-- Chart.js library for visualizing vault summary -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
+
+  <!-- Authentication logic. This script depends on Firebase SDKs loaded above -->
+  <script src="ric3-auth.js"></script>
   <script src="ric3-telecom-vaults.js"></script>
   <script src="ric3-telecom-editor.js"></script>
   <!-- Main application script (navigation, schedule builder, damage reports, etc.) -->
