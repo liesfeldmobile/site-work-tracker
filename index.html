@@ -11,6 +11,17 @@
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="theme-color" content="#202020">
   <link rel="stylesheet" href="styles.css">
+  <!-- Override the topbar background to contrast with the red logo -->
+  <style>
+    /* Make the header dark so the red Liesfeld logo stands out. */
+    .topbar {
+      background: var(--liesfeld-black, #202020);
+    }
+    /* Ensure nav buttons remain readable against the darker header */
+    .topbar .navbtn {
+      color: var(--liesfeld-white, #ffffff);
+    }
+  </style>
 </head>
 <body>
   <div class="topbar">

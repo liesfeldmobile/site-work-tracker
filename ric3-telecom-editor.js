@@ -45,9 +45,12 @@
     const table = createElement('table', { className: 'vault-editor-table' });
     const thead = createElement('thead');
     const headerRow = createElement('tr');
+    // List of fields to render. All fields are editable.
+    // Added an 'attachment' field to allow users to upload photos or documents.
     const fields = [
       'campus', 'building', 'vaultId', 'locatorStation', 'proofed',
-      'accessories', 'ground', 'ladder', 'cleaned', 'riserLid', 'label'
+      'accessories', 'ground', 'ladder', 'cleaned', 'riserLid', 'label',
+      'attachment'
     ];
     fields.forEach(field => {
       headerRow.appendChild(createElement('th', {}, [field]));
@@ -61,10 +64,27 @@
       fields.forEach(field => {
         const cell = createElement('td');
         const value = entry[field] != null ? entry[field] : '';
-        // Create an input for editable fields except campus/building/vaultId
-        if (['campus', 'building', 'vaultId'].includes(field)) {
-          cell.textContent = value;
+        // For the new attachment field, use a file input that accepts images and allows camera capture.
+        if (field === 'attachment') {
+          const fileInput = createElement('input', {
+            type: 'file',
+            accept: 'image/*',
+            capture: 'environment',
+            onchange: async (e) => {
+              const file = e.target.files && e.target.files[0];
+              if (file) {
+                // Convert the file to a data URL so it can be stored in the dataset.
+                const reader = new FileReader();
+                reader.onload = function(evt) {
+                  RIC3_TELECOM_VAULTS[rowIndex][field] = evt.target.result;
+                };
+                reader.readAsDataURL(file);
+              }
+            }
+          });
+          cell.appendChild(fileInput);
         } else {
+          // Create a text input for every other field (including campus, building, vaultId)
           const input = createElement('input', {
             type: 'text',
             value: value,
