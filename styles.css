@@ -1,61 +1,197 @@
+/*
+  Global stylesheet for the Site Work Tracker.
+  This file defines the overall look and feel of the PWA, including layout,
+  navigation styling, forms, tables, and chart containers. The goal is to
+  provide a smooth and intuitive experience that works well on desktop and
+  mobile browsers without relying on external frameworks.
+*/
 
-:root {
-  --bg: #0e0f13;
-  --panel: #161a22;
-  --surface: #1a2030;
-  --text: #e6e9ee;
-  --muted: #9aa6b2;
-  --primary: #e74a3b;
-  --accent: #34d399;
-  --ring: rgba(231,74,59,.35);
+/* Base styles */
+body {
+  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  background: #f0f2f5;
+  color: #333;
 }
-*{box-sizing:border-box}
-html,body{height:100%}
-body{
-  margin:0;
-  font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
-  color:var(--text);
-  background:
-    radial-gradient(1200px 800px at -10% -10%,rgba(231,74,59,.18),transparent 60%),
-    radial-gradient(800px 600px at 110% 10%,rgba(52,211,153,.12),transparent 60%),
-    linear-gradient(180deg,#0e0f13 0%,#0f1218 100%);
-  background-attachment: fixed;
+
+/* Top navigation bar */
+.topbar {
+  background: #202020;
+  padding: 0.5rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
 }
-.app-shell{min-height:100dvh;display:grid;grid-template-rows:auto 1fr auto}
-.topbar{
-  position:sticky;top:0;z-index:50;
-  display:flex;align-items:center;justify-content:space-between;gap:12px;
-  padding:10px 14px;background:rgba(20,24,33,.88);backdrop-filter: blur(6px);
-  border-bottom:1px solid #202636
+
+/* Logo in the header */
+.topbar .logo {
+  height: 40px;
+  margin-right: 1rem;
 }
-.brand{display:flex;align-items:center;gap:10px}
-.logo{height:34px;width:auto}
-.brand-copy{display:flex;flex-direction:column;line-height:1}
-.appname{font-weight:700;letter-spacing:.2px}
-.tagline{font-size:12px;color:var(--muted)}
-.nav{display:flex;gap:8px;align-items:center}
-.navbtn{background:transparent;border:0;color:var(--text);padding:8px 10px;border-bottom:2px solid transparent;border-radius:8px}
-.navbtn:hover{color:var(--primary)}
-.navbtn.active{color:var(--primary);border-bottom-color:var(--primary)}
-.authnav{margin-left:6px}
-main#main{padding:18px}
-.footer{padding:14px;color:var(--muted);text-align:center;border-top:1px solid #202636;background:linear-gradient(180deg,transparent,rgba(26,32,48,.4))}
 
-/* Cards & forms */
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin:12px 0}
-.card{background:var(--surface);border:1px solid #263148;border-radius:14px;padding:14px;font-weight:600;box-shadow:0 8px 24px rgba(0,0,0,.25)}
-form{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));background:var(--panel);padding:14px;border-radius:14px;border:1px solid #263148}
-form label{display:grid;gap:6px;font-size:12px;color:var(--muted)}
-input,select,button{padding:10px 12px;border-radius:12px;border:1px solid #2b374a;background:#0f141f;color:var(--text);outline:none}
-input:focus,select:focus{box-shadow:0 0 0 3px var(--ring);border-color:#395070}
-button[type="submit"], .btn{background:var(--primary);border-color:var(--primary);color:white;font-weight:700;cursor:pointer;transition:.15s transform ease}
-button[type="submit"]:hover,.btn:hover{transform:translateY(-1px)}
+/* Navigation container and buttons */
+.nav {
+  display: flex;
+  gap: 0.5rem;
+}
 
-/* Tables */
-.simple-table{width:100%;border-collapse:separate;border-spacing:0;margin-top:12px;background:var(--panel);border:1px solid #263148;border-radius:14px;overflow:hidden}
-.simple-table th,.simple-table td{padding:10px;border-bottom:1px solid #223047;text-align:left;font-size:14px}
-.simple-table thead th{background:#151b27;color:#c7d2fe;font-weight:700}
-.simple-table tbody tr:hover{background:#131a28}
+.navbtn {
+  background: none;
+  border: none;
+  color: #ffffff;
+  padding: 0.5rem 0.75rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
 
-.table-wrap{overflow:auto;max-width:100%}
-.muted{color:var(--muted);font-size:12px}
+.navbtn:hover {
+  color: #c73735;
+}
+
+.navbtn.active {
+  color: #c73735;
+  border-color: #c73735;
+}
+
+/* Main content area */
+#main {
+  padding: 1rem;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Dashboard statistics boxes */
+.dashboard-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+}
+
+.stat {
+  flex: 1;
+  background: #ffffff;
+  padding: 0.75rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  text-align: center;
+  min-width: 120px;
+}
+
+/* Dashboard links area */
+.dashboard-links {
+  margin-top: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dashboard-links button {
+  padding: 0.5rem 1rem;
+  background: #c73735;
+  color: #ffffff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.dashboard-links button:hover {
+  background: #a82827;
+}
+
+/* Chart sections for each campus */
+.campus-chart-section {
+  margin-top: 1rem;
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.campus-chart-section h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* Simple tables for schedules, damages, vaults */
+.simple-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.simple-table th, .simple-table td {
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  font-size: 0.85rem;
+}
+
+.simple-table th {
+  background: #f5f5f5;
+  text-align: left;
+}
+
+/* Forms for adding new entries */
+form#addScheduleForm,
+form#addDamageForm,
+form#addVaultForm {
+  background: #ffffff;
+  padding: 1rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+form#addScheduleForm label,
+form#addDamageForm label,
+form#addVaultForm label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+/* Filter controls for vault list */
+.vault-filters {
+  background: #ffffff;
+  padding: 0.75rem 1rem;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.vault-filters label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.8rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.vault-filters select {
+  margin-top: 0.25rem;
+  padding: 0.25rem;
+  font-size: 0.9rem;
+}
+
+/* Hide the RIC3 vault editor container on all pages except the Vault page */
+#vault-editor-container {
+  display: none;
+}
+
+body[data-page="vault"] #vault-editor-container {
+  display: block;
+}
