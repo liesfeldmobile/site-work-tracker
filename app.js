@@ -207,10 +207,32 @@ function go(page) {
       </div>
 
     `;
-    // Render the same pie chart used on the vault page
+    // Render a separate pie chart for each campus. The dashboard-chart-container
+    // will hold multiple charts, one per campus. Each chart summarizes
+    // the vault status breakdown for that specific campus.
     const dashChart = document.getElementById('dashboard-chart-container');
     if (dashChart) {
-      chartStatusSummary(dashChart, VAULTS);
+      // Clear any existing content
+      dashChart.innerHTML = '';
+      // Determine unique campuses
+      const campuses = Array.from(new Set(VAULTS.map(v => v.campus)));
+      campuses.forEach(campus => {
+        // Create a section for this campus
+        const section = document.createElement('div');
+        section.className = 'campus-chart-section';
+        // Campus heading
+        const heading = document.createElement('h3');
+        heading.textContent = campus;
+        section.appendChild(heading);
+        // Chart container
+        const chartDiv = document.createElement('div');
+        section.appendChild(chartDiv);
+        // Append section to dashboard container
+        dashChart.appendChild(section);
+        // Render chart using only the vaults for this campus
+        const campusVaults = VAULTS.filter(v => v.campus === campus);
+        chartStatusSummary(chartDiv, campusVaults);
+      });
     }
   }
   // Schedule builder view

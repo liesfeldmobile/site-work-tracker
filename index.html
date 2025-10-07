@@ -10,7 +10,7 @@
   <link rel="icon" href="icons/icon-192.png" sizes="192x192">
   <link rel="apple-touch-icon" href="icons/icon-192.png">
   <meta name="theme-color" content="#202020">
-  <link rel="stylesheet" href="styles.css">
+  <!-- Stylesheet intentionally removed: all critical styles are inline. -->
   <!-- Override the topbar background to contrast with the red logo -->
   <style>
     /* Make the header dark so the red Liesfeld logo stands out. */
@@ -65,7 +65,8 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
 
   <!-- Authentication logic. This script depends on Firebase SDKs loaded above -->
-  <script src="ric3-auth.js"></script>
+  <!-- Use auth.js instead of the non-existent ric3-auth.js -->
+  <script src="auth.js"></script>
   <script src="ric3-telecom-vaults.js"></script>
   <script src="ric3-telecom-editor.js"></script>
   <!-- Main application script (navigation, schedule builder, damage reports, etc.) -->
