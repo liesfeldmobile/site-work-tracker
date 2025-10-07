@@ -10,26 +10,34 @@
 :root {
   /* Primary dark background used for header/nav */
   --primary-dark: #0f1f2b;
+  /* Dark mode background for the entire page */
+  --dark-bg: #0f1f2b;
   /* Accent red used for active nav and call‑to‑action buttons */
   --accent-red: #e21d32;
   /* Darker shade of accent red for hover states */
   --accent-red-hover: #b1182a;
-  /* Light background for page content */
-  --light-bg: #f5f7fa;
-  /* Common white color */
-  --white: #ffffff;
+  /* Card background for panels, forms, tables */
+  --card-bg: #16233a;
   /* Card shadow */
-  --card-shadow: 0 1px 3px rgba(0,0,0,0.1);
-  /* Border color */
-  --border-color: #ddd;
+  --card-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  /* Border color for dark mode */
+  --border-color: #2f3a4d;
+  /* Text color for dark mode */
+  --text-color: #e3e5e8;
+  /* Subtle header row background */
+  --header-bg: #223047;
+  /* Button text color */
+  --button-text: #ffffff;
+  /* Placeholder for white used in some components */
+  --white: #ffffff;
 }
 
 /* Base styles */
 body {
   font-family: Arial, Helvetica, sans-serif;
   margin: 0;
-  background: var(--light-bg);
-  color: #333;
+  background: var(--dark-bg);
+  color: var(--text-color);
 }
 
 /* Top navigation bar */
@@ -56,7 +64,7 @@ body {
 .navbtn {
   background: none;
   border: none;
-  color: var(--white);
+  color: var(--text-color);
   padding: 0.5rem 0.75rem;
   cursor: pointer;
   font-size: 0.9rem;
@@ -90,10 +98,10 @@ body {
 
 .stat {
   flex: 1;
-  background: #ffffff;
+  background: var(--card-bg);
   padding: 0.75rem;
   border-radius: 4px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  box-shadow: var(--card-shadow);
   text-align: center;
   min-width: 120px;
 }
@@ -109,7 +117,7 @@ body {
 .dashboard-links button {
   padding: 0.5rem 1rem;
   background: var(--accent-red);
-  color: var(--white);
+  color: var(--button-text);
   border: none;
   border-radius: 4px;
   cursor: pointer;
@@ -123,7 +131,7 @@ body {
 /* Chart sections for each campus */
 .campus-chart-section {
   margin-top: 1rem;
-  background: var(--white);
+  background: var(--card-bg);
   border-radius: 4px;
   padding: 1rem;
   box-shadow: var(--card-shadow);
@@ -136,11 +144,13 @@ body {
 }
 
 /* Simple tables for schedules, damages, vaults */
+/* Simple tables for schedules, damages, vaults */
 .simple-table {
   width: 100%;
   border-collapse: collapse;
   margin-top: 0.5rem;
-  background: var(--white);
+  /* Use card background instead of white for dark mode */
+  background: var(--card-bg);
   box-shadow: var(--card-shadow);
 }
 
@@ -150,8 +160,11 @@ body {
   font-size: 0.85rem;
 }
 
+/* Table header styling */
 .simple-table th {
-  background: #f5f5f5;
+  /* Dark header background and light text */
+  background: var(--header-bg);
+  color: var(--text-color);
   text-align: left;
 }
 
@@ -159,7 +172,9 @@ body {
 form#addScheduleForm,
 form#addDamageForm,
 form#addVaultForm {
-  background: var(--white);
+  /* Use card background and dark text for forms */
+  background: var(--card-bg);
+  color: var(--text-color);
   padding: 1rem;
   border-radius: 4px;
   box-shadow: var(--card-shadow);
@@ -180,8 +195,11 @@ form#addVaultForm label {
 }
 
 /* Filter controls for vault list */
+/* Filter controls for vault list */
 .vault-filters {
-  background: var(--white);
+  /* Use dark card background */
+  background: var(--card-bg);
+  color: var(--text-color);
   padding: 0.75rem 1rem;
   border-radius: 4px;
   box-shadow: var(--card-shadow);
@@ -203,6 +221,10 @@ form#addVaultForm label {
   margin-top: 0.25rem;
   padding: 0.25rem;
   font-size: 0.9rem;
+  /* Dark mode select styling */
+  background: var(--primary-dark);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
 }
 
 /* Hide the RIC3 vault editor container on all pages except the Vault page */
@@ -212,4 +234,16 @@ form#addVaultForm label {
 
 body[data-page="vault"] #vault-editor-container {
   display: block;
+}
+
+/* Dark theme styles for form inputs and selects */
+input,
+select,
+textarea {
+  /* Dark mode styling for all form fields */
+  background-color: var(--primary-dark) !important;
+  color: var(--text-color) !important;
+  border: 1px solid var(--border-color) !important;
+  border-radius: 3px;
+  padding: 0.25rem;
 }
