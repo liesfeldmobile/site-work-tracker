@@ -33,6 +33,38 @@ function saveDamages() {
   localStorage.setItem('ric3_damages', JSON.stringify(DAMAGES));
 }
 
+// Update functions to make schedule, damage, and vault entries editable. Each
+// update saves the modified data back to localStorage and refreshes the view if needed.
+function updateSchedule(index, field, value) {
+  SCHEDULES[index][field] = value;
+  saveSchedules();
+  // Re-render the schedule page to reflect changes
+  if (document.body.dataset.page === 'schedule') {
+    go('schedule');
+  }
+}
+
+function updateDamage(index, field, value) {
+  DAMAGES[index][field] = value;
+  saveDamages();
+  if (document.body.dataset.page === 'damage') {
+    go('damage');
+  }
+}
+
+function updateVault(index, field, value) {
+  // Normalise field names: progress and status should both update progress
+  if (field === 'status') {
+    field = 'progress';
+  }
+  VAULTS[index][field] = value;
+  saveVaults();
+  // If we are on the vault page, re-render to update the chart and table
+  if (document.body.dataset.page === 'vault') {
+    go('vault');
+  }
+}
+
 // Status options used for vault progress. These values also drive the chart summary.
 const STATUS_OPTIONS = [
   'Not Started',
@@ -126,27 +158,52 @@ function go(page) {
   }
   // Dashboard view
   if (page === 'dashboard') {
+    // Build a cleaner dashboard with a summary chart and quick stats
     document.getElementById('main').innerHTML = `
 
       <h2>Dashboard</h2>
-      <p>Vaults: ${VAULTS.length}</p>
-      <p>Scheduled: ${SCHEDULES.length}</p>
-      <p>Damage: ${DAMAGES.length}</p>
-      <p><a href="#" onclick="go('schedule')">View Schedule</a> <a href="#" onclick="go('damage')">File Damage Report</a> <a href="#" onclick="go('vault')">Manage Vaults</a></p>
+      <!-- Container for the vault status doughnut chart -->
+      <div id="dashboard-chart-container" style="margin-bottom: 1rem;"></div>
+      <div class="dashboard-stats">
+        <div class="stat">
+          <strong>${VAULTS.length}</strong><br>Vaults
+        </div>
+        <div class="stat">
+          <strong>${SCHEDULES.length}</strong><br>Scheduled
+        </div>
+        <div class="stat">
+          <strong>${DAMAGES.length}</strong><br>Damage Reports
+        </div>
+      </div>
+      <div class="dashboard-links">
+        <button onclick="go('schedule')">View Schedule</button>
+        <button onclick="go('damage')">File Damage</button>
+        <button onclick="go('vault')">Manage Vaults</button>
+      </div>
 
     `;
+    // Render the same pie chart used on the vault page
+    const dashChart = document.getElementById('dashboard-chart-container');
+    if (dashChart) {
+      chartStatusSummary(dashChart, VAULTS);
+    }
   }
   // Schedule builder view
   if (page === 'schedule') {
     // Render schedule builder with a scoped type dropdown and persist schedules.
-    const scheduleRows = SCHEDULES.map(item => `
+    // Build editable rows for each schedule entry
+    const scheduleRows = SCHEDULES.map((item, idx) => {
+      // Build options for scope select
+      const options = ['Dry Utilities', 'Wet Utilities', 'Hardscapes'].map(opt => `<option value="${opt}" ${item.type === opt ? 'selected' : ''}>${opt}</option>`).join('');
+      return `
         <tr>
-          <td>${item.type}</td>
-          <td>${item.date}</td>
-          <td>${item.location}</td>
-          <td>${item.crew}</td>
-          <td>${item.description}</td>
-        </tr>`).join('');
+          <td><select onchange="updateSchedule(${idx}, 'type', this.value)">${options}</select></td>
+          <td><input type="date" value="${item.date}" onchange="updateSchedule(${idx}, 'date', this.value)"></td>
+          <td><input value="${item.location}" onchange="updateSchedule(${idx}, 'location', this.value)"></td>
+          <td><input value="${item.crew}" onchange="updateSchedule(${idx}, 'crew', this.value)"></td>
+          <td><input value="${item.description}" onchange="updateSchedule(${idx}, 'description', this.value)"></td>
+        </tr>`;
+    }).join('');
     document.getElementById('main').innerHTML = `
 
       <h2>Schedule Builder</h2>
@@ -187,16 +244,21 @@ function go(page) {
   }
   // Damage report view
   if (page === 'damage') {
-    const damageRows = DAMAGES.map(d => `
+    // Build editable rows for each damage entry
+    const damageRows = DAMAGES.map((d, idx) => {
+      // Build scope options; include the original type values plus our scopes
+      const scopeOptions = ['Dry Utilities', 'Wet Utilities', 'Hardscapes', 'Breakage', 'Other'].map(opt => `<option value="${opt}" ${d.type === opt ? 'selected' : ''}>${opt}</option>`).join('');
+      return `
         <tr>
-          <td>${d.campus}</td>
-          <td>${d.building}</td>
-          <td>${d.vaultId}</td>
-          <td>${d.type}</td>
-          <td>${d.desc}</td>
-          <td>${d.date}</td>
-          <td>${d.author}</td>
-        </tr>`).join('');
+          <td><input value="${d.campus}" onchange="updateDamage(${idx}, 'campus', this.value)"></td>
+          <td><input value="${d.building}" onchange="updateDamage(${idx}, 'building', this.value)"></td>
+          <td><input value="${d.vaultId}" onchange="updateDamage(${idx}, 'vaultId', this.value)"></td>
+          <td><select onchange="updateDamage(${idx}, 'type', this.value)">${scopeOptions}</select></td>
+          <td><input value="${d.desc}" onchange="updateDamage(${idx}, 'desc', this.value)"></td>
+          <td><input type="date" value="${d.date}" onchange="updateDamage(${idx}, 'date', this.value)"></td>
+          <td><input value="${d.author}" onchange="updateDamage(${idx}, 'author', this.value)"></td>
+        </tr>`;
+    }).join('');
     document.getElementById('main').innerHTML = `
 
       <h2>Vault Damage Tracker</h2>
@@ -259,15 +321,20 @@ function go(page) {
   }
   // Vault tracker view
   if (page === 'vault') {
-    const vaultRows = VAULTS.map(v => `
+    // Build editable rows for each vault entry
+    const vaultRows = VAULTS.map((v, idx) => {
+      // Build status options from STATUS_OPTIONS
+      const statusOpts = STATUS_OPTIONS.map(opt => `<option value="${opt}" ${(v.progress || v.status || '') === opt ? 'selected' : ''}>${opt}</option>`).join('');
+      return `
         <tr>
-          <td>${v.campus}</td>
-          <td>${v.building}</td>
-          <td>${v.vaultId}</td>
-          <td>${v.category || ''}</td>
-          <td>${v.progress || v.status || ''}</td>
-          <td>${v.notes || ''}</td>
-        </tr>`).join('');
+          <td><input value="${v.campus}" onchange="updateVault(${idx}, 'campus', this.value)"></td>
+          <td><input value="${v.building}" onchange="updateVault(${idx}, 'building', this.value)"></td>
+          <td><input value="${v.vaultId}" onchange="updateVault(${idx}, 'vaultId', this.value)"></td>
+          <td><input value="${v.category || ''}" onchange="updateVault(${idx}, 'category', this.value)"></td>
+          <td><select onchange="updateVault(${idx}, 'progress', this.value)">${statusOpts}</select></td>
+          <td><input value="${v.notes || ''}" onchange="updateVault(${idx}, 'notes', this.value)"></td>
+        </tr>`;
+    }).join('');
     document.getElementById('main').innerHTML = `
 
       <h2>Vault Tracker</h2>
@@ -278,7 +345,11 @@ function go(page) {
         <label>Building <input name="building" required></label>
         <label>Category <input name="category"></label>
         <label>Vault ID <input name="vaultId" required></label>
-        <label>Status/Progress <input name="status"></label>
+        <label>Status/Progress 
+          <select name="status">
+            ${STATUS_OPTIONS.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+          </select>
+        </label>
         <label>Notes <input name="notes"></label>
         <!-- Attachment input for vaults (e.g., photos or documents) -->
         <label>Attachment <input type="file" name="attachment" accept="image/*" capture="environment"></label>
