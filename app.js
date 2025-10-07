@@ -431,10 +431,33 @@ function go(page) {
       </table>
 
     `;
-    // Render chart summary based on the filtered list
+    // Render chart summaries per campus based on the filtered list. Instead of a single
+    // aggregated chart, display a separate pie chart for each campus represented
+    // in the filtered results. This allows the user to see the status breakdown
+    // for each campus independently. Charts are created inside the vault-chart-container.
     const chartTarget = document.getElementById('vault-chart-container');
     if (chartTarget) {
-      chartStatusSummary(chartTarget, filteredVaults);
+      // Clear any existing content to avoid stacking old charts
+      chartTarget.innerHTML = '';
+      // Determine the unique campuses present in the filtered list
+      const campuses = Array.from(new Set(filteredVaults.map(v => v.campus)));
+      campuses.forEach(campus => {
+        // Create a section for this campus
+        const section = document.createElement('div');
+        section.className = 'campus-chart-section';
+        // Heading with the campus name
+        const heading = document.createElement('h3');
+        heading.textContent = campus;
+        section.appendChild(heading);
+        // Chart container for the campus
+        const chartDiv = document.createElement('div');
+        section.appendChild(chartDiv);
+        // Append this section to the main chart container
+        chartTarget.appendChild(section);
+        // Filter vaults down to just this campus and render the chart
+        const campusVaults = filteredVaults.filter(v => v.campus === campus);
+        chartStatusSummary(chartDiv, campusVaults);
+      });
     }
     document.getElementById('addVaultForm').onsubmit = function(e) {
       e.preventDefault();
