@@ -7,7 +7,7 @@
   https://developers.google.com/web/fundamentals/primers/service-workers
 */
 
-const CACHE_NAME = 'swt-v6';
+const CACHE_NAME = 'swt-v7';
 
 // List of files to cache for offline use. If you add new static resources
 // (scripts, stylesheets, images) you should add them here as well.

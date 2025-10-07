@@ -75,13 +75,39 @@ const STATUS_OPTIONS = [
   'Turned Over',
 ];
 
+// Filtering state for the vault tracker. When any of these fields
+// contain a non-empty string, the vault list and chart will be
+// filtered accordingly. A value of '' means no filter on that field.
+let vaultFilterCampus = '';
+let vaultFilterBuilding = '';
+let vaultFilterStatus = '';
+
+// Update a vault filter field and re-render the vault page. The
+// `field` argument should be one of 'campus', 'building', or 'status'.
+// Called from onchange handlers on the filter <select> elements.
+function setVaultFilter(field, value) {
+  if (field === 'campus') {
+    vaultFilterCampus = value;
+  } else if (field === 'building') {
+    vaultFilterBuilding = value;
+  } else if (field === 'status') {
+    vaultFilterStatus = value;
+  }
+  // Refresh the vault page to apply new filters
+  if (document.body.dataset.page === 'vault') {
+    go('vault');
+  }
+}
+
 /*
   Render a small doughnut chart summarizing the vault status breakdown.
   - target: DOM element to append the chart to.
   - vaults: array of vault objects with a progress or status property.
 */
 function chartStatusSummary(target, vaults) {
-  // Count statuses
+  // Count statuses across the provided vault array. Initialize counts for
+  // each status option to zero, then increment based on the vault's
+  // progress (or status). Unknown values are bucketed under 'Not Started'.
   const counts = {};
   STATUS_OPTIONS.forEach(opt => (counts[opt] = 0));
   vaults.forEach(v => {
@@ -89,11 +115,9 @@ function chartStatusSummary(target, vaults) {
     if (counts[s] !== undefined) counts[s]++;
     else counts['Not Started']++;
   });
-  const turned = counts['Turned Over'] || 0;
-  const outstanding = vaults.length - turned;
   // Remove any existing chart content
   target.innerHTML = '';
-  // Create wrapper and canvas
+  // Create wrapper and canvas for the doughnut chart
   const wrapper = document.createElement('div');
   wrapper.style.display = 'flex';
   wrapper.style.justifyContent = 'center';
@@ -105,13 +129,14 @@ function chartStatusSummary(target, vaults) {
   canvas.height = 150;
   wrapper.appendChild(canvas);
   target.appendChild(wrapper);
-  // Build chart data
+  // Build chart data using all status options. Each status gets its own
+  // slice in the doughnut chart. Chart.js will handle assigning colors.
   const data = {
-    labels: ['Turned Over', 'Outstanding'],
+    labels: STATUS_OPTIONS,
     datasets: [
       {
-        data: [turned, outstanding],
-        // Colors are not explicitly specified; Chart.js will pick defaults.
+        data: STATUS_OPTIONS.map(s => counts[s]),
+        // Colors are not explicitly specified; Chart.js picks defaults.
       },
     ],
   };
@@ -321,9 +346,26 @@ function go(page) {
   }
   // Vault tracker view
   if (page === 'vault') {
-    // Build editable rows for each vault entry
-    const vaultRows = VAULTS.map((v, idx) => {
-      // Build status options from STATUS_OPTIONS
+    // Build unique lists for campus, building, and status filters
+    const allCampuses = Array.from(new Set(VAULTS.map(v => v.campus))).sort();
+    const allBuildings = Array.from(new Set(VAULTS.map(v => v.building))).sort();
+    const allStatuses = STATUS_OPTIONS;
+    // Build options for filter selects with an "All" entry
+    const campusSelectOptions = ['<option value="">All</option>', ...allCampuses.map(c => `<option value="${c}" ${vaultFilterCampus === c ? 'selected' : ''}>${c}</option>`)].join('');
+    const buildingSelectOptions = ['<option value="">All</option>', ...allBuildings.map(b => `<option value="${b}" ${vaultFilterBuilding === b ? 'selected' : ''}>${b}</option>`)].join('');
+    const statusSelectOptions = ['<option value="">All</option>', ...allStatuses.map(s => `<option value="${s}" ${vaultFilterStatus === s ? 'selected' : ''}>${s}</option>`)].join('');
+    // Filter the vault list according to the current filter values
+    const filteredVaults = VAULTS.filter(v => {
+      const campusOk = !vaultFilterCampus || v.campus === vaultFilterCampus;
+      const buildingOk = !vaultFilterBuilding || v.building === vaultFilterBuilding;
+      const statusVal = v.progress || v.status || 'Not Started';
+      const statusOk = !vaultFilterStatus || statusVal === vaultFilterStatus;
+      return campusOk && buildingOk && statusOk;
+    });
+    // Build editable rows for each filtered vault entry. Use the global index
+    // from VAULTS so that update functions modify the correct object.
+    const vaultRows = filteredVaults.map(v => {
+      const idx = VAULTS.indexOf(v);
       const statusOpts = STATUS_OPTIONS.map(opt => `<option value="${opt}" ${(v.progress || v.status || '') === opt ? 'selected' : ''}>${opt}</option>`).join('');
       return `
         <tr>
@@ -338,6 +380,12 @@ function go(page) {
     document.getElementById('main').innerHTML = `
 
       <h2>Vault Tracker</h2>
+      <!-- Filter controls for vault list -->
+      <div class="vault-filters" style="margin-bottom:0.5rem;">
+        <label>Campus <select onchange="setVaultFilter('campus', this.value)">${campusSelectOptions}</select></label>
+        <label>Building <select onchange="setVaultFilter('building', this.value)">${buildingSelectOptions}</select></label>
+        <label>Status <select onchange="setVaultFilter('status', this.value)">${statusSelectOptions}</select></label>
+      </div>
       <!-- Summary chart for vault status -->
       <div id="vault-chart-container"></div>
       <form id="addVaultForm">
@@ -361,10 +409,10 @@ function go(page) {
       </table>
 
     `;
-    // Render chart summary
+    // Render chart summary based on the filtered list
     const chartTarget = document.getElementById('vault-chart-container');
     if (chartTarget) {
-      chartStatusSummary(chartTarget, VAULTS);
+      chartStatusSummary(chartTarget, filteredVaults);
     }
     document.getElementById('addVaultForm').onsubmit = function(e) {
       e.preventDefault();
