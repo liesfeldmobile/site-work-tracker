@@ -37,9 +37,9 @@
     }
   </style>
 
-  <!-- Supabase JavaScript library for auth handling.  -->
-  <!-- See https://supabase.com/docs/reference/javascript/initializing -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <!-- Firebase SDKs for app and authentication (compat version) -->
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.24.0/firebase-auth-compat.js"></script>
 </head>
 <body>
   <div class="topbar">
@@ -64,14 +64,12 @@
   <!-- Chart.js library for visualizing vault summary -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.3.0/dist/chart.umd.min.js"></script>
 
-  <!-- Application scripts are loaded in a specific order: datasets, main app, auth, then editor. -->
+  <!-- Authentication logic. This script depends on Firebase SDKs loaded above -->
+  <script src="ric3-auth.js"></script>
   <script src="ric3-telecom-vaults.js"></script>
-  <!-- Main application script defines the `go` router function and page rendering. -->
-  <script src="app.js"></script>
-  <!-- Authentication logic using Supabase. Depends on the Supabase library loaded in the head and the router defined in app.js. -->
-  <script src="auth.js"></script>
-  <!-- RIC3 Telecom editor must be loaded after the app so it can hook into the Vault page. -->
   <script src="ric3-telecom-editor.js"></script>
+  <!-- Main application script (navigation, schedule builder, damage reports, etc.) -->
+  <script src="app.js"></script>
   <!-- Register service worker for offline capabilities -->
   <script>
     if ('serviceWorker' in navigator) {
